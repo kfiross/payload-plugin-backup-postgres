@@ -1,0 +1,19 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./src",
+    "outDir": "./dist",
+    "noEmit": false,
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    "incremental": false,
+    "composite": false,
+    "paths": {
+      "payload-plugin-backup-postgres": ["./src/index.ts"],
+      "payload-plugin-backup-postgres/client": ["./src/exports/client.ts"],
+      "payload-plugin-backup-postgres/rsc": ["./src/exports/rsc.ts"]
+    }
+  },
+  "include": ["./src/**/*.ts", "./src/**/*.tsx", "./src/**/*.d.ts"],
+  "exclude": ["dist", "node_modules", "tests", "dev"]
+}

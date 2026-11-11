@@ -1,0 +1,45 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "lib": ["DOM", "DOM.Iterable", "ES2022"],
+    "rootDir": "./",
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": false,
+    "strictNullChecks": true,
+    "esModuleInterop": true,
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "incremental": true,
+    "target": "ES2022",
+    "noEmit": true,
+    "paths": {
+      
+      "payload-plugin-backup-postgres": ["./src/index.ts"],
+      "payload-plugin-backup-postgres/client": ["./src/exports/client.ts"],
+      "payload-plugin-backup-postgres/rsc": ["./src/exports/rsc.ts"]
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
+  },
+  "include": [
+    "./src/**/*.ts",
+    "./src/**/*.tsx",
+    "./src/**/*.d.ts",
+    "./dev/**/*.ts",
+    "./dev/**/*.tsx",
+    "./dev/**/*.js",
+    "./dev/**/*.jsx",
+    "./dev/**/*.mjs",
+    "./tests/**/*.ts",
+    "./dev/next-env.d.ts",
+    ".next/dev/types/**/*.ts"
+  ],
+  "exclude": ["dist", "node_modules"]
+}

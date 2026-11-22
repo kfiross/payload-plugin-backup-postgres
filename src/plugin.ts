@@ -31,10 +31,11 @@ export const backupPostgresPlugin = (options: BackupPluginOptions = {}): Plugin 
         components: {
           ...incomingConfig.admin?.components,
            views: {
-          ...existingViews,
-          dbBackups: {
-            Component: 'payload-plugin-backup-postgres/rsc#BackupDashboard',
-            path: '/db-backups',
+            ...existingViews,
+            dbBackups: {
+              Component: 'payload-plugin-backup-postgres/rsc#BackupDashboard',
+              path: '/db-backups',
+            },
           },
         },
       },

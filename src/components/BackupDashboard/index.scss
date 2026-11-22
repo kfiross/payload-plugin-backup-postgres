@@ -127,7 +127,7 @@
     padding: base(0.1) base(1.2);
     border: 1px solid var(--theme-elevation-100);
     border-radius: base(0.2);
-    background: var(--theme-elevation-25, #fafafa);
+    background: var(--theme-elevation-50, var(--theme-bg, #fafafa));
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -762,7 +762,7 @@
   &__loading-block {
     padding: base(0.5) base(0.55);
     border-radius: base(0.15);
-    background: var(--theme-elevation-25, #fafafa);
+    background: var(--theme-elevation-50, var(--theme-bg, #fafafa));
     border: 1px solid var(--theme-elevation-100);
     margin-bottom: base(0.6);
 

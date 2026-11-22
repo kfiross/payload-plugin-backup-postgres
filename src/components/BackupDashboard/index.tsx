@@ -1,5 +1,5 @@
 import type { I18n } from '@payloadcms/translations'
-import type { Payload } from 'payload'
+import type { AdminViewServerProps, Payload } from 'payload'
 
 import type { BackupPluginOptions } from '../../types'
 
@@ -14,6 +14,8 @@ import {
 } from '../../utils/index'
 import { backupDashboardInlineCss } from './backupDashboardInlineCss'
 import { BackupListCollapsible, BackupSettingsModal, ManualBackupDialog } from './index.client'
+import { DefaultTemplate } from '@payloadcms/next/templates'
+import { Gutter } from '@payloadcms/ui'
 
 interface BackupDashboardProps {
   i18n: I18n
@@ -48,7 +50,36 @@ function defaultIsHidden(
   return !isUserAllowedByEnvRoles(user)
 }
 
-export const BackupDashboard: React.FC<BackupDashboardProps> = async ({ i18n, payload, user }) => {
+export const BackupDashboard: React.FC<AdminViewServerProps> = ({
+  initPageResult,
+  params,
+  searchParams,
+  ...props
+}) => {
+
+  return (
+    <DefaultTemplate
+      i18n={initPageResult.req.i18n}
+      locale={initPageResult.locale}
+      params={params}
+      payload={initPageResult.req.payload}
+      permissions={initPageResult.permissions}
+      searchParams={searchParams}
+      user={initPageResult.req.user || undefined}
+      visibleEntities={initPageResult.visibleEntities}
+    >
+      <Gutter>
+        <div style={{display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '24px'}}>
+          <h1>Backups <span className="experimental">(experimental)</span></h1>
+          <p>Here you can manage your database backups</p>
+        </div>
+        <BackupDashboardView i18n={initPageResult.req.i18n} payload={initPageResult.req.payload}user={initPageResult.req.user || undefined} />
+      </Gutter>
+    </DefaultTemplate>
+  )
+}
+
+export const BackupDashboardView: React.FC<BackupDashboardProps> = async ({ i18n, payload, user }) => {
   if (defaultIsHidden(user)) {
     return null
   }
@@ -124,10 +155,6 @@ export const BackupDashboard: React.FC<BackupDashboardProps> = async ({ i18n, pa
         data-payload-backup-postgres="1"
       />
       <div className="backup-dashboard">
-        <h2>
-          Backups <span className="experimental">(experimental)</span>
-        </h2>
-
         {!storageConfigured && storageKind === 's3' && (
           <p className="backup-dashboard__setup-hint" role="status">
             Set <code className="backup-dashboard__setup-hint-code">BACKUP_S3_BUCKET</code> (and

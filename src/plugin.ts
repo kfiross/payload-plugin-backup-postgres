@@ -14,21 +14,21 @@ export const backupPostgresPlugin = (options: BackupPluginOptions = {}): Plugin 
       return incomingConfig
     }
 
-    const existingAfterDashboard = incomingConfig.admin?.components?.afterDashboard || []
     const existingCollections = incomingConfig.collections || []
     const existingEndpoints = incomingConfig.endpoints ?? []
+    const existingViews = incomingConfig.admin?.views || {}
     const backupEndpoints = createBackupPostgresEndpoints(options)
 
     return {
       ...incomingConfig,
       admin: {
         ...incomingConfig.admin,
-        components: {
-          ...incomingConfig.admin?.components,
-          afterDashboard: [
-            ...existingAfterDashboard,
-            'payload-plugin-backup-postgres/rsc#BackupDashboard',
-          ],
+        views: {
+          ...existingViews,
+          dbBackups: {
+            Component: 'payload-plugin-backup-postgres/rsc#BackupDashboard',
+            path: '/db-backups',
+          },
         },
       },
       collections: [...existingCollections, BackupTasksCollection, BackupSettingsCollection],

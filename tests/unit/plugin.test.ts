@@ -58,17 +58,23 @@ describe('backupPostgresPlugin', () => {
     expect(paths).toContain('/backup-postgres/admin/task/:id')
   })
 
-  it('injects the BackupDashboard after existing afterDashboard components', () => {
-    const existingAfter = 'some/existing/component'
+  it('registers the BackupDashboard at /db-backups and preserves existing admin views', () => {
+    const existingView = { Component: 'some/existing/component', path: '/existing' }
+    const existingAfterDashboard = 'some/existing/after-dashboard'
     const out = applyPlugin(
       {},
       baseConfig({
-        admin: { components: { afterDashboard: [existingAfter as never] } },
+        admin: {
+          components: { afterDashboard: [existingAfterDashboard as never] },
+          views: { existing: existingView },
+        },
       } as Partial<Config>),
     )
-    const afterDashboard = out.admin?.components?.afterDashboard as unknown[]
-    expect(afterDashboard).toHaveLength(2)
-    expect(afterDashboard[0]).toBe(existingAfter)
-    expect(afterDashboard[1]).toMatch(/BackupDashboard/)
+    expect(out.admin?.views?.existing).toBe(existingView)
+    expect(out.admin?.views?.dbBackups).toEqual({
+      Component: 'payload-plugin-backup-postgres/rsc#BackupDashboard',
+      path: '/db-backups',
+    })
+    expect(out.admin?.components?.afterDashboard).toEqual([existingAfterDashboard])
   })
 })

@@ -188,9 +188,9 @@ bucket does **not** need to be public.
 
 ## Admin UI
 
-After the first login as an admin user, a **Backups** section appears below the
-default Payload dashboard. Day-to-day tasks — create, download, restore, delete,
-schedule — all happen in the UI below.
+After the first login as an admin user, the backup dashboard is available at
+`/admin/db-backups`. Day-to-day tasks — create, download, restore, delete,
+schedule — are managed on this dedicated page.
 
 **Who can see it?** The visibility rules, in precedence order:
 

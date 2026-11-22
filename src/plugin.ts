@@ -10,20 +10,27 @@ import { createBackupPostgresEndpoints } from './endpoints/index'
 
 export const backupPostgresPlugin = (options: BackupPluginOptions = {}): Plugin => {
   return (incomingConfig: Config): Config => {
+    /**
+     * If the plugin is disabled, we still want to keep added collections/fields so the database schema is consistent which is important for migrations.
+     * If your plugin heavily modifies the database schema, you may want to remove this property.
+     */
     if (options.enabled === false) {
       return incomingConfig
     }
+    
 
     const existingCollections = incomingConfig.collections || []
     const existingEndpoints = incomingConfig.endpoints ?? []
-    const existingViews = incomingConfig.admin?.views || {}
+    const existingViews = incomingConfig.admin?.components?.views || {}
     const backupEndpoints = createBackupPostgresEndpoints(options)
 
     return {
       ...incomingConfig,
       admin: {
         ...incomingConfig.admin,
-        views: {
+        components: {
+          ...incomingConfig.admin?.components,
+           views: {
           ...existingViews,
           dbBackups: {
             Component: 'payload-plugin-backup-postgres/rsc#BackupDashboard',

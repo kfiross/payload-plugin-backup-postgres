@@ -9,11 +9,11 @@ import type { BackupPluginOptions } from '../../types'
 import { listBackups, resolveBackupListToken } from '../../core/backup'
 import { getBackupStorageKind, isBackupStorageConfigured } from '../../core/storage'
 import {
+  formatBytes,
   getBackupSortTimeMs,
   getCurrentDbName,
   getCurrentHostname,
   isUserAllowedByEnvRoles,
-  formatBytes,
   transformBlobName,
 } from '../../utils/index'
 import { backupDashboardInlineCss } from './backupDashboardInlineCss'
@@ -218,6 +218,7 @@ export const BackupDashboardView: React.FC<BackupDashboardProps> = async ({ i18n
 
         <BackupListCollapsible
           blobs={sortedBlobs.map((b) => ({
+            backupNumber: b.backupNumber,
             downloadUrl: b.downloadUrl,
             pathname: b.pathname,
             size: b.size,

@@ -11,6 +11,7 @@ import { BackupCollectionsDetails } from './BackupCollectionsDetails.client'
 import { BackupItemActions } from './BackupItemActions.client'
 
 export interface SerializableBackupBlob {
+  backupNumber?: number
   downloadUrl: string
   pathname: string
   size: number
@@ -223,6 +224,11 @@ export const BackupListCollapsible: React.FC<BackupListCollapsibleProps> = ({
                 <div className="backup-item" key={blob.pathname}>
                   <div className="backup-item__main">
                     <div className="backup-item__primary">
+                      {typeof blob.backupNumber === 'number' ?
+                        <span className="backup-item__pill backup-item__pill--number">
+                          #{blob.backupNumber}
+                        </span>
+                      : null}
                       <time
                         className="backup-item__time"
                         dateTime={displayAt.toISOString()}
@@ -282,6 +288,7 @@ export const BackupListCollapsible: React.FC<BackupListCollapsibleProps> = ({
                     </div>
                   </div>
                   <BackupItemActions
+                    backupNumber={blob.backupNumber}
                     downloadUrl={blob.downloadUrl}
                     pathname={blob.pathname}
                     url={blob.url}

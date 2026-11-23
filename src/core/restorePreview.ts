@@ -10,7 +10,7 @@ import { resolveTableOwners, rootTablesForSlug } from './tableGroups'
 const AUTH_SESSION_SLUGS = new Set(['payload-preferences', 'roles', 'sessions', 'users'])
 
 /** Groups never listed in the UI (plugin-internal progress rows). */
-const DEFAULT_EXCLUDED_GROUPS = new Set(['backup-tasks'])
+const DEFAULT_EXCLUDED_GROUPS = new Set(['backup-numbers', 'backup-tasks'])
 
 export type RestorePreviewFileKind = 'json' | 'tar-gzip'
 

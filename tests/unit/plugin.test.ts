@@ -34,13 +34,14 @@ describe('backupPostgresPlugin', () => {
     expect(out).toBe(input)
   })
 
-  it('registers the backup-tasks and backup-settings collections alongside existing ones', () => {
+  it('registers the internal backup collections alongside existing ones', () => {
     const existing = { slug: 'existing' } as never
     const out = applyPlugin({}, baseConfig({ collections: [existing] }))
     const slugs = (out.collections ?? []).map((c: { slug: string }) => c.slug)
     expect(slugs).toContain('existing')
     expect(slugs).toContain('backup-tasks')
     expect(slugs).toContain('backup-settings')
+    expect(slugs).toContain('backup-numbers')
   })
 
   it('appends backup endpoints without removing existing ones', () => {

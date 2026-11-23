@@ -9,12 +9,14 @@ import { RestoreBackupDialog } from './RestoreBackupDialog.client'
 import { TaskActionButton } from './TaskActionButton.client'
 
 type BackupItemActionsProps = {
+  backupNumber?: number
   downloadUrl: string
   pathname: string
   url: string
 }
 
 export const BackupItemActions: React.FC<BackupItemActionsProps> = ({
+  backupNumber,
   downloadUrl,
   pathname,
   url,
@@ -48,16 +50,19 @@ export const BackupItemActions: React.FC<BackupItemActionsProps> = ({
       {/* Native <dialog>: backdrop dismiss; element not in jsx-a11y interactive list */}
       {/* eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions */}
       <dialog
-        className="backup-confirm-dialog"
+        className="backup-confirm-dialog backup-confirm-dialog--delete-backup"
         onMouseDown={(e) => closeNativeDialogOnBackdropPointer(e, deleteDialogRef)}
         ref={deleteDialogRef}
       >
-        <p className="backup-confirm-dialog__title">Delete this backup?</p>
+        <p className="backup-confirm-dialog__title">
+          {backupNumber === undefined ? 'Delete this backup?' : `Delete backup #${backupNumber} ?`}
+        </p>
         <p className="backup-confirm-dialog__body">This action cannot be undone.</p>
         <div className="backup-confirm-dialog__actions">
           <TaskActionButton
             body={{ pathname, url }}
             buttonStyle="error"
+            className="backup-confirm-dialog__delete-button"
             completeLabel="Deleted"
             endpoint={backupPluginPublicApiPaths.adminDelete}
             idleLabel="Yes, delete"
@@ -69,10 +74,11 @@ export const BackupItemActions: React.FC<BackupItemActionsProps> = ({
           />
           <Button
             buttonStyle="secondary"
+            className="backup-confirm-dialog__not-now-button"
             onClick={() => deleteDialogRef.current?.close()}
-            size="small"
+            size="medium"
           >
-            Cancel
+            Not now
           </Button>
         </div>
       </dialog>

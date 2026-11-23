@@ -2,6 +2,7 @@ import type { Config, Plugin } from 'payload'
 
 import type { BackupPluginOptions } from './types'
 
+import { BackupNumbersCollection } from './collections/BackupNumbers'
 import { BackupSettingsCollection } from './collections/BackupSettings'
 import { BackupTasksCollection } from './collections/BackupTasks'
 import { BACKUP_SETTINGS_SLUG } from './core/backupSettings'
@@ -39,7 +40,12 @@ export const backupPostgresPlugin = (options: BackupPluginOptions = {}): Plugin 
           },
         },
       },
-      collections: [...existingCollections, BackupTasksCollection, BackupSettingsCollection],
+      collections: [
+        ...existingCollections,
+        BackupTasksCollection,
+        BackupSettingsCollection,
+        BackupNumbersCollection,
+      ],
       endpoints: [...existingEndpoints, ...backupEndpoints],
       onInit: async (payload) => {
         await incomingConfig.onInit?.(payload)

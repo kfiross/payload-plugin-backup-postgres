@@ -2,6 +2,8 @@ import type { Payload } from 'payload'
 
 import { list } from '@vercel/blob'
 
+import type { BackupStorageObject } from './storage/types'
+
 import {
   serializeBackupTableDumpProgress,
   serializeBackupUploadProgress,
@@ -14,6 +16,12 @@ import {
 } from '../utils/index'
 import { createTarGzip } from './archive'
 import { type BackupBlobAccessLevel, readBackupBlobContentFlexible } from './backupBlobIO'
+import {
+  BACKUP_NUMBERS_SLUG,
+  ensureBackupNumbers,
+  numberBackupBlobs,
+  reserveBackupNumber,
+} from './backupNumbers'
 import { getResolvedCronBackupSettings, resolveBackupBlobToken } from './backupSettings'
 import { getPgDb, listTables, type PgClient, qi, qualified, withClient } from './db'
 import {
@@ -57,14 +65,17 @@ export async function listBackups(
   } = {},
 ) {
   const kind = getBackupStorageKind()
+  let blobs: BackupStorageObject[]
   if (kind === 'vercel-blob') {
     const token = await resolveBackupListToken(payload, options.blobToken)
     if (!token) {
       return []
     }
-    return resolveBackupStorage({ blobToken: token, kind }).list('backups/')
+    blobs = await resolveBackupStorage({ blobToken: token, kind }).list('backups/')
+  } else {
+    blobs = await resolveBackupStorage({ kind }).list('backups/')
   }
-  return resolveBackupStorage({ kind }).list('backups/')
+  return numberBackupBlobs(payload, blobs)
 }
 
 function resolveBlobToken(blobToken?: string): string | undefined {
@@ -158,8 +169,12 @@ export async function dumpDatabase(
         `SELECT current_setting('server_version') AS v`,
       )
       const allTables = await listTables(client, schema)
+      const owners = resolveTableOwners(payload, allTables, tableNameMap)
       const tables: PgBackupDocument['tables'] = {}
       const tablesToDump = allTables.filter((table) => {
+        if (owners.get(table)?.slug === BACKUP_NUMBERS_SLUG) {
+          return false
+        }
         if (skip.has(table)) {
           payload.logger.debug({ table }, '[backup] Skipping blacklisted table')
           return false
@@ -178,7 +193,6 @@ export async function dumpDatabase(
 
       const mediaPathnames: string[] = []
       if (options.collectMedia) {
-        const owners = resolveTableOwners(payload, Object.keys(tables), tableNameMap)
         const uploadSlugs = new Set(
           (payload.config.collections ?? []).filter((c) => Boolean(c.upload)).map((c) => c.slug),
         )
@@ -301,6 +315,8 @@ export async function createBackup(
     await updateBackupTask(payload, taskId, { message: 'Starting backup', status: 'running' })
   }
 
+  await ensureBackupNumbers(payload, await storage.list('backups/'))
+
   if (cron) {
     const blobs = await storage.list('backups/cron-')
     const sorted = blobs.sort(
@@ -378,8 +394,9 @@ export async function createBackup(
     includeMedia ? 'tar.gz' : 'json',
     label || undefined,
   )}`
+  const backupNumber = await reserveBackupNumber(payload, name)
 
-  payload.logger.info({ name }, '[backup] Uploading backup to blob storage')
+  payload.logger.info({ name, backupNumber }, '[backup] Uploading backup to blob storage')
   const totalBytes =
     typeof backupFile === 'string' ? Buffer.byteLength(backupFile) : backupFile.byteLength
   let lastProgressUpdateAt = 0

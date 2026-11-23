@@ -409,6 +409,14 @@
         font-variant-numeric: tabular-nums;
       }
 
+      &--number {
+        background: var(--theme-elevation-0, #fff);
+        border-color: var(--theme-elevation-250, var(--theme-elevation-200));
+        color: var(--theme-elevation-900);
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+      }
+
       &--label {
         background: rgba(124, 58, 237, 0.1);
         color: var(--theme-elevation-900);
@@ -582,6 +590,22 @@
         background-color: var(--theme-error-700, #a93226);
         border-color: var(--theme-error-700, #a93226);
       }
+    }
+  }
+
+  &--delete-backup {
+    .backup-confirm-dialog__actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .backup-task-action,
+    .backup-confirm-dialog__not-now-button {
+      width: 100%;
+    }
+
+    .backup-confirm-dialog__delete-button {
+      width: 100%;
     }
   }
 

@@ -212,6 +212,7 @@ describe('postgres backup & restore', () => {
 
     const doc = JSON.parse(blobs.get(backupPath)!.body.toString('utf8'))
     expect(doc.format).toBe('payload-plugin-backup-postgres')
+    expect(Object.keys(doc.tables)).not.toContain('backup_numbers')
     for (const t of [
       'posts',
       'posts_locales',
@@ -226,6 +227,10 @@ describe('postgres backup & restore', () => {
     ]) {
       expect(Object.keys(doc.tables)).toContain(t)
     }
+    const numberedBackup = (await listBackups(payload)).find(
+      (blob) => blob.pathname === backupPath,
+    )
+    expect(numberedBackup?.backupNumber).toBe(1)
     expect(doc.tables.posts.rowCount).toBe(3)
   })
 
@@ -414,5 +419,19 @@ describe('postgres backup & restore', () => {
     expect(
       (await listBackups(payload)).filter((b) => b.pathname.startsWith('backups/cron-')),
     ).toHaveLength(2)
+  })
+
+  it('does not reuse backup numbers after a backup is deleted', async () => {
+    const before = await listBackups(payload)
+    const highestNumber = Math.max(...before.map((blob) => blob.backupNumber))
+    const removed = before[0]
+    expect(removed).toBeTruthy()
+    await memStorage.del({ pathname: removed.pathname, url: removed.url })
+
+    await createBackup(payload, { label: 'after delete' })
+
+    const after = await listBackups(payload)
+    const created = after.find((blob) => blob.pathname.includes('after%20delete'))
+    expect(created?.backupNumber).toBeGreaterThan(highestNumber)
   })
 })

@@ -206,6 +206,11 @@ After the first login as an admin user, the backup dashboard is available at
 `/admin/db-backups`. Day-to-day tasks — create, download, restore, delete,
 schedule — are managed on this dedicated page.
 
+Backups receive sequential numbers starting at **#1**. Existing archives are
+numbered oldest first, and a number is never reused after its backup is deleted.
+Each Payload database has its own counter, kept in the database and excluded
+from backup restores.
+
 **Who can see it?** The visibility rules, in precedence order:
 
 1. If the plugin is registered with an `access` function, it wins (see

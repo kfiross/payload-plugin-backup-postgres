@@ -26,6 +26,16 @@ the database engine was rewritten for Payload's Drizzle/Postgres adapter.
 
 Backups are **not** interchangeable between the two plugins.
 
+## Screenshots
+
+### Backup dashboard
+
+![Backup dashboard showing the backup list and actions](./assets/screenshots/backup-dashboard.png)
+
+### Task progress
+
+![Backup task progress while a table is being dumped](./assets/screenshots/backup-progress.png)
+
 ## Requirements
 
 - Payload `^3`, Next.js 15/16, React 19, Node `>=20.9`

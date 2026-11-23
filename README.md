@@ -30,11 +30,11 @@ Backups are **not** interchangeable between the two plugins.
 
 ### Backup dashboard
 
-![Backup dashboard showing the backup list and actions](./assets/screenshots/backup-dashboard.png)
+![Backup dashboard showing the backup list and actions](./docs/screenshots/backup-dashboard.png)
 
 ### Task progress
 
-![Backup task progress while a table is being dumped](./assets/screenshots/backup-progress.png)
+![Backup task progress while a table is being dumped](./docs/screenshots/backup-progress.png)
 
 ## Requirements
 

@@ -23,7 +23,8 @@ export function createAdminTaskEndpoint(options: BackupPluginOptions): Endpoint 
       const url = new URL((req as unknown as Request).url)
       const bearer = req.headers.get('authorization')?.match(/^Bearer\s+(\S+)\s*$/i)?.[1]
       const querySecret = url.searchParams.get('pollSecret')
-      const provided = bearer ?? querySecret ?? ''
+      const provided =
+        req.headers.get('x-backup-poll-secret') ?? bearer ?? querySecret ?? ''
 
       const storedSecret = typeof task.pollSecret === 'string' ? task.pollSecret : null
       const pollOk = storedSecret && provided.length > 0 && pollSecretsMatch(provided, storedSecret)

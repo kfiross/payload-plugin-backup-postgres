@@ -184,7 +184,7 @@ export const TaskActionButton: React.FC<TaskActionButtonProps> = ({
         const response = await fetch(backupPluginPublicApiPaths.adminTask(task.id), {
           cache: 'no-store',
           ...(pollSecretRef.current ?
-            { headers: { Authorization: `Bearer ${pollSecretRef.current}` } }
+            { headers: { 'X-Backup-Poll-Secret': pollSecretRef.current } }
           : {}),
         })
 

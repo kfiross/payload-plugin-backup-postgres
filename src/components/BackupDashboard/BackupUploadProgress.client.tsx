@@ -63,7 +63,7 @@ export const BackupUploadProgress: React.FC = () => {
       try {
         const response = await fetch(backupPluginPublicApiPaths.adminTask(activeTask.taskId), {
           cache: 'no-store',
-          headers: { Authorization: `Bearer ${activeTask.pollSecret}` },
+          headers: { 'X-Backup-Poll-Secret': activeTask.pollSecret },
         })
         if (!response.ok) {
           throw new Error('Could not load backup upload progress')
@@ -180,7 +180,7 @@ export const BackupUploadProgress: React.FC = () => {
               }
               setIsCancelling(true)
               void fetch(backupPluginPublicApiPaths.adminTaskCancel(activeTask.taskId), {
-                headers: { Authorization: `Bearer ${activeTask.pollSecret}` },
+                headers: { 'X-Backup-Poll-Secret': activeTask.pollSecret },
                 method: 'POST',
               })
                 .then(async (response) => {

@@ -560,7 +560,7 @@ export const BackupSettingsModal: FC = () => {
     const pollOnce = async () => {
       const res = await fetch(backupPluginPublicApiPaths.adminTask(activeTransfer.taskId), {
         cache: 'no-store',
-        headers: { Authorization: `Bearer ${activeTransfer.pollSecret}` },
+        headers: { 'X-Backup-Poll-Secret': activeTransfer.pollSecret },
       })
       if (!res.ok || cancelled) {
         return

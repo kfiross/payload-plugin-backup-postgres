@@ -19,8 +19,11 @@ export function createAdminTaskCancelEndpoint(options: BackupPluginOptions): End
         return jsonError('Not found', 404)
       }
 
-      const bearer = req.headers.get('authorization')?.match(/^Bearer\s+(\S+)\s*$/i)?.[1] ?? ''
-      const pollOk = pollSecretsMatch(bearer, task.pollSecret)
+      const pollSecret =
+        req.headers.get('x-backup-poll-secret') ??
+        req.headers.get('authorization')?.match(/^Bearer\s+(\S+)\s*$/i)?.[1] ??
+        ''
+      const pollOk = pollSecretsMatch(pollSecret, task.pollSecret)
       if (!pollOk) {
         const user = await getAuthorizedBackupAdmin(req, options)
         if (!user) {

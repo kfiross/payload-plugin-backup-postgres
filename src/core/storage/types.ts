@@ -62,6 +62,7 @@ export interface BackupStorageAdapter {
     pathname: string,
     body: Buffer | string | Uint8Array,
     onProgress?: (progress: BackupStorageUploadProgress) => void,
+    signal?: AbortSignal,
   ): Promise<{ pathname: string; url: string }>
   /** Read the full bytes of an archive. */
   read(ref: BackupStorageRef): Promise<Buffer>

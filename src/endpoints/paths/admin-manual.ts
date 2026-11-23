@@ -11,7 +11,12 @@ import {
   resolveBackupBlobToken,
 } from '../../core/backupSettings'
 import { isBackupStorageConfigured } from '../../core/storage'
-import { completeBackupTask, createBackupTask, failBackupTask } from '../../core/taskProgress'
+import {
+  completeBackupTask,
+  createBackupTask,
+  failBackupTask,
+  getBackupTask,
+} from '../../core/taskProgress'
 import { sanitizeBackupLabel } from '../../utils/index'
 import { jsonError, readRequestJson, requireBackupAdmin } from '../shared'
 
@@ -67,8 +72,11 @@ export function createAdminManualEndpoint(options: BackupPluginOptions): Endpoin
             }
           })
           .catch(async (error) => {
-            await failBackupTask(payload, taskId, error)
-            payload.logger.error({ err: error, taskId }, '[backup-endpoint] Manual backup failed')
+            const currentTask = await getBackupTask(payload, taskId)
+            if (currentTask?.status !== 'cancelled') {
+              await failBackupTask(payload, taskId, error)
+              payload.logger.error({ err: error, taskId }, '[backup-endpoint] Manual backup failed')
+            }
           }),
       )
 

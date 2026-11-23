@@ -166,6 +166,16 @@
       }
     }
 
+    &-controls {
+      display: flex;
+      align-items: center;
+      gap: base(0.6);
+
+      .backup-dashboard__upload-progress-bar {
+        flex: 1;
+      }
+    }
+
     &--error {
       border-color: var(--theme-error-300, #e6a09a);
       background: var(--theme-error-50, rgba(192, 57, 43, 0.08));

@@ -1,5 +1,6 @@
 'use client'
 
+import { Button } from '@payloadcms/ui'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
@@ -14,11 +15,21 @@ import {
 } from '../../utils/backupUploadProgress'
 import { formatBytes } from '../../utils/formatBytes'
 
+function isTerminalTaskStatus(status: BackupTaskProgress['status']): boolean {
+  return (
+    status === 'cancelled' ||
+    status === 'completed' ||
+    status === 'completed_with_warnings' ||
+    status === 'failed'
+  )
+}
+
 export const BackupUploadProgress: React.FC = () => {
   const router = useRouter()
   const [activeTask, setActiveTask] = useState<BackupTaskStartedDetail | null>(null)
   const [task, setTask] = useState<BackupTaskProgress | null>(null)
   const [progressError, setProgressError] = useState<null | string>(null)
+  const [isCancelling, setIsCancelling] = useState(false)
 
   useEffect(() => {
     const onTaskStarted = (event: Event) => {
@@ -33,6 +44,7 @@ export const BackupUploadProgress: React.FC = () => {
       setActiveTask(detail)
       setTask(null)
       setProgressError(null)
+      setIsCancelling(false)
     }
 
     window.addEventListener(BACKUP_TASK_STARTED_EVENT, onTaskStarted)
@@ -60,7 +72,9 @@ export const BackupUploadProgress: React.FC = () => {
         if (cancelled) {
           return
         }
-        setTask(nextTask)
+        setTask((current) =>
+          current && isTerminalTaskStatus(current.status) ? current : nextTask,
+        )
         setProgressError(null)
 
         if (nextTask.status === 'completed' || nextTask.status === 'completed_with_warnings') {
@@ -76,6 +90,13 @@ export const BackupUploadProgress: React.FC = () => {
             setActiveTask(null)
             setTask(null)
           }, 10000)
+          return
+        }
+        if (nextTask.status === 'cancelled') {
+          timer = setTimeout(() => {
+            setActiveTask(null)
+            setTask(null)
+          }, 5000)
           return
         }
         timer = setTimeout(() => void poll(), 1000)
@@ -107,10 +128,14 @@ export const BackupUploadProgress: React.FC = () => {
   const percentage =
     upload ? Math.min(100, Math.floor((upload.bytesUploaded / upload.totalBytes) * 100)) : undefined
   const isFailed = task?.status === 'failed' || progressError !== null
+  const canCancel =
+    task === null || task.status === 'queued' || task.status === 'running'
   const message =
     progressError ||
     (task?.status === 'failed' ?
       task.error || task.message
+    : task?.status === 'cancelled' ?
+      'Backup cancelled'
     : task?.status === 'completed' || task?.status === 'completed_with_warnings' ?
       'Backup uploaded'
     : task?.message ? getBackupTaskDisplayMessage(task.message)
@@ -133,17 +158,54 @@ export const BackupUploadProgress: React.FC = () => {
           </span>
         : null}
       </div>
-      {isFailed ? null : (
-        <progress
-          aria-label="Backup file upload"
-          className="backup-dashboard__upload-progress-bar"
-          max={100}
-          value={
-            task?.status === 'completed' || task?.status === 'completed_with_warnings' ? 100
-            : percentage
-          }
-        />
-      )}
+      <div className="backup-dashboard__upload-progress-controls">
+        {isFailed ? null : (
+          <progress
+            aria-label="Backup file upload"
+            className="backup-dashboard__upload-progress-bar"
+            max={100}
+            value={
+              task?.status === 'completed' || task?.status === 'completed_with_warnings' ? 100
+              : percentage
+            }
+          />
+        )}
+        {canCancel && (
+          <Button
+            buttonStyle="secondary"
+            disabled={isCancelling}
+            onClick={() => {
+              if (!activeTask) {
+                return
+              }
+              setIsCancelling(true)
+              void fetch(backupPluginPublicApiPaths.adminTaskCancel(activeTask.taskId), {
+                headers: { Authorization: `Bearer ${activeTask.pollSecret}` },
+                method: 'POST',
+              })
+                .then(async (response) => {
+                  if (!response.ok) {
+                    throw new Error('Could not cancel backup')
+                  }
+                  const cancelledTask = (await response.json()) as BackupTaskProgress
+                  setTask((current) =>
+                    current && isTerminalTaskStatus(current.status) ? current : cancelledTask,
+                  )
+                  setProgressError(null)
+                })
+                .catch((error: unknown) => {
+                  setProgressError(
+                    error instanceof Error ? error.message : 'Could not cancel backup',
+                  )
+                })
+                .finally(() => setIsCancelling(false))
+            }}
+            size="small"
+          >
+            {isCancelling ? 'Cancelling upload…' : 'Cancel upload'}
+          </Button>
+        )}
+      </div>
     </section>
   )
 }

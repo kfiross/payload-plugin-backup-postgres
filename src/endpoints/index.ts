@@ -9,6 +9,7 @@ import { createAdminPreviewEndpoints } from './paths/admin-preview'
 import { createAdminRestoreEndpoint } from './paths/admin-restore'
 import { createAdminSettingsEndpoints } from './paths/admin-settings'
 import { createAdminTaskEndpoint } from './paths/admin-task'
+import { createAdminTaskCancelEndpoint } from './paths/admin-task-cancel'
 import { createAdminValidateBlobTokenEndpoint } from './paths/admin-validate-blob-token'
 import { createCronListEndpoint } from './paths/cron-list'
 import { createCronRestoreEndpoint } from './paths/cron-restore'
@@ -26,6 +27,7 @@ export function createBackupPostgresEndpoints(options: BackupPluginOptions): End
     ...createAdminSettingsEndpoints(options),
     createAdminDeleteEndpoint(options),
     createAdminTaskEndpoint(options),
+    createAdminTaskCancelEndpoint(options),
     createAdminValidateBlobTokenEndpoint(options),
   ]
 

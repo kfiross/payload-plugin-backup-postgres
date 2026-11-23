@@ -21,7 +21,7 @@ export const BackupTasksCollection: CollectionConfig = {
     {
       name: 'status',
       type: 'select',
-      options: ['queued', 'running', 'completed', 'completed_with_warnings', 'failed'],
+      options: ['queued', 'running', 'completed', 'completed_with_warnings', 'failed', 'cancelled'],
       required: true,
     },
     {

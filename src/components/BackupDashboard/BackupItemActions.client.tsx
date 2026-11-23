@@ -62,6 +62,7 @@ export const BackupItemActions: React.FC<BackupItemActionsProps> = ({
             endpoint={backupPluginPublicApiPaths.adminDelete}
             idleLabel="Yes, delete"
             kind="delete"
+            onComplete={() => deleteDialogRef.current?.close()}
             pendingLabel="Deleting..."
             refreshOnComplete={true}
           />

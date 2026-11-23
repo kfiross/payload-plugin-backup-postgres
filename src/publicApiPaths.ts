@@ -11,6 +11,8 @@ export const backupPluginPublicApiPaths = {
   adminRestorePreview: '/api/backup-postgres/admin/restore-preview',
   adminSettings: '/api/backup-postgres/admin/settings',
   adminTask: (id: string) => `/api/backup-postgres/admin/task/${encodeURIComponent(id)}`,
+  adminTaskCancel: (id: string) =>
+    `/api/backup-postgres/admin/task/${encodeURIComponent(id)}/cancel`,
   adminValidateBlobToken: '/api/backup-postgres/admin/validate-blob-token',
   cron: '/api/backup-postgres/cron/run',
   cronRestore: '/api/backup-postgres/cron/restore',

@@ -55,8 +55,9 @@ export class VercelBlobStorage implements BackupStorageAdapter {
     pathname: string,
     body: Buffer | string | Uint8Array,
     onProgress?: (progress: BackupStorageUploadProgress) => void,
+    signal?: AbortSignal,
   ) {
-    await putBackupBlobContent(pathname, body, this.token, this.access, onProgress)
+    await putBackupBlobContent(pathname, body, this.token, this.access, onProgress, signal)
     return { pathname, url: '' }
   }
 

@@ -37,9 +37,20 @@ type TaskActionButtonProps = {
   kind: BackupTaskProgress['kind']
   /** Invoked once when the task reaches a successful terminal state (`completed` or `completed_with_warnings`). */
   onComplete?: () => void
+  /** Invoked after the server accepts the task. */
+  onStarted?: () => void
   pendingLabel: string
   redirectOnComplete?: string
   refreshOnComplete?: boolean
+}
+
+function isTerminalTaskStatus(status: BackupTaskProgress['status']): boolean {
+  return (
+    status === 'cancelled' ||
+    status === 'completed' ||
+    status === 'completed_with_warnings' ||
+    status === 'failed'
+  )
 }
 
 export const TaskActionButton: React.FC<TaskActionButtonProps> = ({
@@ -53,13 +64,13 @@ export const TaskActionButton: React.FC<TaskActionButtonProps> = ({
   idleLabel,
   kind,
   onComplete,
+  onStarted,
   pendingLabel,
   redirectOnComplete,
   refreshOnComplete = false,
 }) => {
   const router = useRouter()
   const dangerDialogRef = useRef<HTMLDialogElement>(null)
-  const intervalRef = useRef<null | ReturnType<typeof setInterval>>(null)
   /** Avoid firing `onComplete` twice if the polling effect re-runs while status stays `completed`. */
   const completeNotifyForTaskIdRef = useRef<null | string>(null)
   /** Lets the task GET succeed after restore replaces `users` (session becomes invalid). */
@@ -73,10 +84,7 @@ export const TaskActionButton: React.FC<TaskActionButtonProps> = ({
   const message = error || (task?.message ? getBackupTaskDisplayMessage(task.message) : '')
   const warnings = !error && task?.warnings ? task.warnings : ''
 
-  const isTerminal =
-    task?.status === 'completed' ||
-    task?.status === 'completed_with_warnings' ||
-    task?.status === 'failed'
+  const isTerminal = task ? isTerminalTaskStatus(task.status) : false
 
   const label = useMemo(() => {
     if (isBusy) {
@@ -115,6 +123,10 @@ export const TaskActionButton: React.FC<TaskActionButtonProps> = ({
       return 'Failed'
     }
 
+    if (task?.status === 'cancelled') {
+      return 'Cancelled'
+    }
+
     if (isDoneWithWarnings) {
       return 'Done with warnings'
     }
@@ -131,21 +143,8 @@ export const TaskActionButton: React.FC<TaskActionButtonProps> = ({
   }, [error, isBusy, isDoneWithWarnings, task?.status])
 
   useEffect(() => {
-    return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-      }
-    }
-  }, [])
-
-  useEffect(() => {
     if (!task?.id || !isTerminal) {
       return
-    }
-
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current)
-      intervalRef.current = null
     }
 
     if (task.status === 'completed' || task.status === 'completed_with_warnings') {
@@ -177,29 +176,51 @@ export const TaskActionButton: React.FC<TaskActionButtonProps> = ({
       return
     }
 
-    intervalRef.current = setInterval(async () => {
-      const response = await fetch(backupPluginPublicApiPaths.adminTask(task.id), {
-        cache: 'no-store',
-        ...(pollSecretRef.current ?
-          { headers: { Authorization: `Bearer ${pollSecretRef.current}` } }
-        : {}),
-      })
+    let cancelled = false
+    let timer: ReturnType<typeof setTimeout> | undefined
 
-      if (!response.ok) {
-        clearInterval(intervalRef.current!)
-        intervalRef.current = null
-        setError('Could not load task progress')
-        return
+    const poll = async () => {
+      try {
+        const response = await fetch(backupPluginPublicApiPaths.adminTask(task.id), {
+          cache: 'no-store',
+          ...(pollSecretRef.current ?
+            { headers: { Authorization: `Bearer ${pollSecretRef.current}` } }
+          : {}),
+        })
+
+        if (!response.ok) {
+          throw new Error('Could not load task progress')
+        }
+
+        const nextTask = (await response.json()) as BackupTaskProgress
+        if (cancelled) {
+          return
+        }
+        setTask((current) =>
+          current && isTerminalTaskStatus(current.status) ? current : nextTask,
+        )
+        setError(null)
+        if (
+          nextTask.status === 'queued' ||
+          nextTask.status === 'running'
+        ) {
+          timer = setTimeout(() => void poll(), 1000)
+        }
+      } catch (pollError) {
+        if (cancelled) {
+          return
+        }
+        setError(pollError instanceof Error ? pollError.message : 'Could not load task progress')
+        timer = setTimeout(() => void poll(), 3000)
       }
+    }
 
-      const nextTask = (await response.json()) as BackupTaskProgress
-      setTask(nextTask)
-    }, 1000)
+    void poll()
 
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-        intervalRef.current = null
+      cancelled = true
+      if (timer) {
+        clearTimeout(timer)
       }
     }
   }, [isTerminal, task?.id])
@@ -243,6 +264,7 @@ export const TaskActionButton: React.FC<TaskActionButtonProps> = ({
         status: 'queued',
         updatedAt: now,
       })
+      onStarted?.()
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Request failed')
     } finally {

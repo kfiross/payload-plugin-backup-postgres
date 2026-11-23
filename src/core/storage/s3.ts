@@ -193,6 +193,7 @@ export class S3BackupStorage implements BackupStorageAdapter {
     pathname: string,
     body: Buffer | string | Uint8Array,
     onProgress?: (progress: { loaded: number; total: number }) => void,
+    signal?: AbortSignal,
   ) {
     const { Upload } = await import('@aws-sdk/lib-storage')
     const client = await this.client()
@@ -213,7 +214,19 @@ export class S3BackupStorage implements BackupStorageAdapter {
         onProgress({ loaded: progress.loaded ?? 0, total })
       })
     }
-    await upload.done()
+    const abort = () => {
+      void upload.abort()
+    }
+    if (signal?.aborted) {
+      abort()
+    } else {
+      signal?.addEventListener('abort', abort, { once: true })
+    }
+    try {
+      await upload.done()
+    } finally {
+      signal?.removeEventListener('abort', abort)
+    }
     return { pathname, url: await this.presignGet(key) }
   }
 

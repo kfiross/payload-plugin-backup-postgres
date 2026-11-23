@@ -186,6 +186,7 @@ export async function putBackupBlobContent(
   token: string | undefined,
   access: BackupBlobAccessLevel,
   onProgress?: (progress: { loaded: number; total: number }) => void,
+  signal?: AbortSignal,
 ): Promise<BackupBlobAccessLevel> {
   const order: BackupBlobAccessLevel[] =
     access === 'private' ? ['private', 'public'] : ['public', 'private']
@@ -196,11 +197,15 @@ export async function putBackupBlobContent(
         access: attempt,
         addRandomSuffix: false,
         allowOverwrite: true,
+        ...(signal ? { abortSignal: signal } : {}),
         onUploadProgress: onProgress,
         ...(token ? { token } : {}),
       })
       return attempt
     } catch (error) {
+      if (signal?.aborted) {
+        throw error
+      }
       if (firstError === undefined) {
         firstError = error
       }

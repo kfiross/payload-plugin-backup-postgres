@@ -18,7 +18,6 @@ export const ManualBackupDialog: React.FC = () => {
   const uid = useId()
   const labelInputId = `${uid}-manual-backup-label`
   const dialogRef = useRef<HTMLDialogElement>(null)
-  const postSuccessCloseTimerRef = useRef<null | ReturnType<typeof setTimeout>>(null)
   const [preview, setPreview] = useState<BackupSourcePreviewResponse | null>(null)
   const [phase, setPhase] = useState<'error' | 'idle' | 'loading' | 'ready'>('idle')
   const [errorMessage, setErrorMessage] = useState<null | string>(null)
@@ -43,23 +42,11 @@ export const ManualBackupDialog: React.FC = () => {
       return
     }
     const onClose = () => {
-      if (postSuccessCloseTimerRef.current) {
-        clearTimeout(postSuccessCloseTimerRef.current)
-        postSuccessCloseTimerRef.current = null
-      }
       resetState()
     }
     el.addEventListener('close', onClose)
     return () => el.removeEventListener('close', onClose)
   }, [resetState])
-
-  useEffect(() => {
-    return () => {
-      if (postSuccessCloseTimerRef.current) {
-        clearTimeout(postSuccessCloseTimerRef.current)
-      }
-    }
-  }, [])
 
   useEffect(() => {
     if (!preview) {
@@ -139,16 +126,7 @@ export const ManualBackupDialog: React.FC = () => {
     [includeMedia, sanitizedLabel, skipCollections],
   )
 
-  const closeModalAfterBackupSuccess = useCallback(() => {
-    if (postSuccessCloseTimerRef.current) {
-      clearTimeout(postSuccessCloseTimerRef.current)
-    }
-    postSuccessCloseTimerRef.current = setTimeout(() => {
-      postSuccessCloseTimerRef.current = null
-      router.refresh()
-      dialogRef.current?.close()
-    }, 1000)
-  }, [router])
+  const refreshAfterBackupSuccess = useCallback(() => router.refresh(), [router])
 
   const onToggleGroup = useCallback((groupId: string) => {
     setSelected((prev) => {
@@ -226,7 +204,8 @@ export const ManualBackupDialog: React.FC = () => {
             idleDisabled={phase !== 'ready' && phase !== 'error'}
             idleLabel="Start backup"
             kind="backup"
-            onComplete={closeModalAfterBackupSuccess}
+            onComplete={refreshAfterBackupSuccess}
+            onStarted={() => dialogRef.current?.close()}
             pendingLabel="Creating backup…"
           />
           <button

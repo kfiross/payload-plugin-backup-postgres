@@ -23,7 +23,7 @@ import {
 } from './pgArchive'
 import { getBackupStorageKind, resolveBackupStorage } from './storage'
 import { resolveTableOwners } from './tableGroups'
-import { updateBackupTask } from './taskProgress'
+import { isBackupTaskCancelled, updateBackupTask } from './taskProgress'
 
 export { DATABASE_FILE_NAME } from './pgArchive'
 
@@ -284,6 +284,9 @@ export async function createBackup(
     '[backup] Starting backup',
   )
   if (taskId) {
+    if (await isBackupTaskCancelled(payload, taskId)) {
+      return
+    }
     await updateBackupTask(payload, taskId, { message: 'Starting backup', status: 'running' })
   }
 
@@ -296,6 +299,9 @@ export async function createBackup(
     if (oldest.length > 0) {
       payload.logger.info({ count: oldest.length }, '[backup] Pruning old cron backups')
       if (taskId) {
+        if (await isBackupTaskCancelled(payload, taskId)) {
+          throw new Error('Backup cancelled')
+        }
         await updateBackupTask(payload, taskId, {
           message: `Pruning ${oldest.length} old cron backup${oldest.length === 1 ? '' : 's'}`,
         })
@@ -315,9 +321,15 @@ export async function createBackup(
     onTable: async (table, rowCount) => {
       payload.logger.debug({ rows: rowCount, table }, '[backup] Table dumped')
       if (taskId) {
+        if (await isBackupTaskCancelled(payload, taskId)) {
+          throw new Error('Backup cancelled')
+        }
         await updateBackupTask(payload, taskId, {
           message: `Dumped table ${table} (${rowCount} rows)`,
         })
+        if (taskId && (await isBackupTaskCancelled(payload, taskId))) {
+          throw new Error('Backup cancelled')
+        }
       }
     },
     skipTables: skipCollections,
@@ -338,6 +350,9 @@ export async function createBackup(
     includeMedia ?
       await createMediaBackupFile(databaseFile, mediaPathnames, token, undefined, payload)
     : databaseFile
+  if (taskId && (await isBackupTaskCancelled(payload, taskId))) {
+    throw new Error('Backup cancelled')
+  }
   const name = `backups/${createBlobName(
     type,
     currentDbName,
@@ -353,33 +368,53 @@ export async function createBackup(
     typeof backupFile === 'string' ? Buffer.byteLength(backupFile) : backupFile.byteLength
   let lastProgressUpdateAt = 0
   let progressWrites = Promise.resolve()
+  const uploadAbortController = new AbortController()
+  let cancellationPoll: ReturnType<typeof setInterval> | undefined
   if (taskId) {
     await updateBackupTask(payload, taskId, {
       message: serializeBackupUploadProgress({ bytesUploaded: 0, totalBytes }),
     })
-  }
-  await storage.put(
-    name,
-    backupFile,
-    taskId ?
-      ({ loaded, total }) => {
-        const now = Date.now()
-        if (now - lastProgressUpdateAt < 500 && loaded < total) {
-          return
+    cancellationPoll = setInterval(() => {
+      void isBackupTaskCancelled(payload, taskId).then((cancelled) => {
+        if (cancelled) {
+          uploadAbortController.abort()
         }
-        lastProgressUpdateAt = now
-        const progressTotalBytes = total > 0 ? total : totalBytes
-        const message = serializeBackupUploadProgress({
-          bytesUploaded: loaded,
-          totalBytes: progressTotalBytes,
-        })
-        progressWrites = progressWrites.then(async () => {
-          await updateBackupTask(payload, taskId, { message })
-        })
-      }
-    : undefined,
-  )
+      })
+    }, 1000)
+  }
+  try {
+    await storage.put(
+      name,
+      backupFile,
+      taskId ?
+        ({ loaded, total }) => {
+          const now = Date.now()
+          if (now - lastProgressUpdateAt < 500 && loaded < total) {
+            return
+          }
+          lastProgressUpdateAt = now
+          const progressTotalBytes = total > 0 ? total : totalBytes
+          const message = serializeBackupUploadProgress({
+            bytesUploaded: loaded,
+            totalBytes: progressTotalBytes,
+          })
+          progressWrites = progressWrites.then(async () => {
+            await updateBackupTask(payload, taskId, { message })
+          })
+        }
+      : undefined,
+      taskId ? uploadAbortController.signal : undefined,
+    )
+  } finally {
+    if (cancellationPoll) {
+      clearInterval(cancellationPoll)
+    }
+  }
   await progressWrites
+  if (taskId && (await isBackupTaskCancelled(payload, taskId))) {
+    await storage.del({ pathname: name })
+    throw new Error('Backup cancelled')
+  }
   if (taskId) {
     await updateBackupTask(payload, taskId, {
       message: serializeBackupUploadProgress({ bytesUploaded: totalBytes, totalBytes }),

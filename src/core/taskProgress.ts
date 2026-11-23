@@ -8,7 +8,7 @@ import { buildRestoreWarnings, formatRestoreSummary, restoreTaskStatus } from '.
 
 export type BackupTaskKind = 'backup' | 'blobTransfer' | 'delete' | 'restore'
 export type BackupTaskStatus =
-  'completed' | 'completed_with_warnings' | 'failed' | 'queued' | 'running'
+  'cancelled' | 'completed' | 'completed_with_warnings' | 'failed' | 'queued' | 'running'
 
 export type BackupTaskProgress = {
   createdAt: string
@@ -80,6 +80,14 @@ export async function updateBackupTask(
   patch: Partial<Pick<BackupTaskProgress, 'error' | 'message' | 'status' | 'warnings'>>,
 ): Promise<BackupTaskProgress | undefined> {
   try {
+    const current = await getBackupTask(payload, id)
+    if (
+      current &&
+      ['cancelled', 'completed', 'completed_with_warnings', 'failed'].includes(current.status) &&
+      patch.status !== current.status
+    ) {
+      return stripPollSecretForClient(current)
+    }
     const doc = await payload.update({
       id,
       collection: 'backup-tasks',
@@ -99,11 +107,33 @@ export async function completeBackupTask(
   message: string,
   options?: { status?: 'completed' | 'completed_with_warnings'; warnings?: string },
 ): Promise<BackupTaskProgress | undefined> {
+  const current = await getBackupTask(payload, id)
+  if (current?.status === 'cancelled') {
+    return stripPollSecretForClient(current)
+  }
   return updateBackupTask(payload, id, {
     message,
     status: options?.status ?? 'completed',
     warnings: options?.warnings ?? null,
   })
+}
+
+export async function cancelBackupTask(
+  payload: Payload,
+  id: string,
+): Promise<BackupTaskProgress | undefined> {
+  const current = await getBackupTask(payload, id)
+  if (!current || !['queued', 'running'].includes(current.status)) {
+    return current ? stripPollSecretForClient(current) : undefined
+  }
+  return updateBackupTask(payload, id, {
+    message: 'Backup cancelled',
+    status: 'cancelled',
+  })
+}
+
+export async function isBackupTaskCancelled(payload: Payload, id: string): Promise<boolean> {
+  return (await getBackupTask(payload, id))?.status === 'cancelled'
 }
 
 export async function completeRestoreBackupTask(

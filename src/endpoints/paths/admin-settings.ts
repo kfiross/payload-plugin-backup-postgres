@@ -207,8 +207,11 @@ export function createAdminSettingsEndpoints(options: BackupPluginOptions): Endp
         }
 
         stored = await getResolvedCronBackupSettings(payload)
-        if (!stored.id) {
-          return Response.json({ error: 'Could not persist backup settings' }, { status: 500 })
+        if (!stored.id || stored.backupBlobReadWriteToken.trim() !== tokenForDb) {
+          return Response.json(
+            { error: 'Could not persist backup settings and verify the backup token' },
+            { status: 500 },
+          )
         }
 
         const vercelCron = readVercelBackupCronFromRepo()

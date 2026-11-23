@@ -155,7 +155,7 @@ export const BackupSettingsModal: FC = () => {
    * Default: off — the user must explicitly opt in to destructive behavior.
    */
   const [deleteBackupBlobsFromSource, setDeleteBackupBlobsFromSource] = useState(false)
-  const [, setHasExistingBackupBlobToken] = useState(false)
+  const [hasExistingBackupBlobToken, setHasExistingBackupBlobToken] = useState(false)
   const [storedBackupBlobAccess, setStoredBackupBlobAccess] = useState<'private' | 'public' | null>(
     null,
   )
@@ -805,6 +805,12 @@ export const BackupSettingsModal: FC = () => {
                   />
                   <span className="restore-preview__blob-token-pill-slot">{tokenStatusPill}</span>
                 </div>
+                {hasExistingBackupBlobToken ?
+                  <p aria-live="polite" className="restore-preview__intro">
+                    A backup token is saved and masked above. Leave it unchanged to keep using it,
+                    or paste a new token to replace it.
+                  </p>
+                : null}
                 {tokenCheck.status === 'invalid' && tokenCheck.message ?
                   <p aria-live="polite" className="restore-preview__blob-token-error">
                     {tokenCheck.message}

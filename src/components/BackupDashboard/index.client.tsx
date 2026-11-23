@@ -7,6 +7,7 @@ export type {
   SerializableBackupBlob,
 } from './BackupListCollapsible.client'
 export { BackupSettingsModal } from './BackupSettingsModal.client'
+export { BackupUploadProgress } from './BackupUploadProgress.client'
 export { ManualBackupDialog } from './ManualBackupDialog.client'
 export { RestoreBackupDialog } from './RestoreBackupDialog.client'
 export { TaskActionButton } from './TaskActionButton.client'

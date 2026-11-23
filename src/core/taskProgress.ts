@@ -87,7 +87,8 @@ export async function updateBackupTask(
       overrideAccess: true,
     })
     return doc as unknown as BackupTaskProgress
-  } catch {
+  } catch (err) {
+    payload.logger.error({ err, taskId: id }, '[backup-task] Could not update task progress')
     return undefined
   }
 }

@@ -1,6 +1,9 @@
 import type { I18n } from '@payloadcms/translations'
 import type { AdminViewServerProps, Payload } from 'payload'
 
+import { DefaultTemplate } from '@payloadcms/next/templates'
+import { Gutter } from '@payloadcms/ui'
+
 import type { BackupPluginOptions } from '../../types'
 
 import { listBackups, resolveBackupListToken } from '../../core/backup'
@@ -13,9 +16,12 @@ import {
   transformBlobName,
 } from '../../utils/index'
 import { backupDashboardInlineCss } from './backupDashboardInlineCss'
-import { BackupListCollapsible, BackupSettingsModal, ManualBackupDialog } from './index.client'
-import { DefaultTemplate } from '@payloadcms/next/templates'
-import { Gutter } from '@payloadcms/ui'
+import {
+  BackupListCollapsible,
+  BackupSettingsModal,
+  BackupUploadProgress,
+  ManualBackupDialog,
+} from './index.client'
 
 interface BackupDashboardProps {
   i18n: I18n
@@ -198,6 +204,8 @@ export const BackupDashboardView: React.FC<BackupDashboardProps> = async ({ i18n
             <ManualBackupDialog />
           </div>
         </div>
+
+        <BackupUploadProgress />
 
         <BackupListCollapsible
           blobs={sortedBlobs.map((b) => ({

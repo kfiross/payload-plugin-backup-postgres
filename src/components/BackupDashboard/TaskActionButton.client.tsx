@@ -7,6 +7,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import type { BackupTaskProgress } from '../../core/taskProgress'
 
 import { backupPluginPublicApiPaths } from '../../publicApiPaths'
+import {
+  BACKUP_TASK_STARTED_EVENT,
+  type BackupTaskStartedDetail,
+  getBackupTaskDisplayMessage,
+} from '../../utils/backupUploadProgress'
 import { closeNativeDialogOnBackdropPointer } from '../../utils/dialogBackdrop'
 
 export interface TaskActionDangerConfirm {
@@ -65,7 +70,7 @@ export const TaskActionButton: React.FC<TaskActionButtonProps> = ({
 
   const isBusy = isStarting || task?.status === 'queued' || task?.status === 'running'
   const isDoneWithWarnings = task?.status === 'completed_with_warnings'
-  const message = error || task?.message || ''
+  const message = error || (task?.message ? getBackupTaskDisplayMessage(task.message) : '')
   const warnings = !error && task?.warnings ? task.warnings : ''
 
   const isTerminal =
@@ -222,6 +227,13 @@ export const TaskActionButton: React.FC<TaskActionButtonProps> = ({
 
       const data = (await response.json()) as { pollSecret?: string; taskId: string }
       pollSecretRef.current = data.pollSecret ?? null
+      if (kind === 'backup' && data.pollSecret) {
+        const detail: BackupTaskStartedDetail = {
+          pollSecret: data.pollSecret,
+          taskId: data.taskId,
+        }
+        window.dispatchEvent(new CustomEvent(BACKUP_TASK_STARTED_EVENT, { detail }))
+      }
       const now = new Date().toISOString()
       setTask({
         id: data.taskId,

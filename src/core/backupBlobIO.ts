@@ -185,6 +185,7 @@ export async function putBackupBlobContent(
   body: Buffer | string | Uint8Array,
   token: string | undefined,
   access: BackupBlobAccessLevel,
+  onProgress?: (progress: { loaded: number; total: number }) => void,
 ): Promise<BackupBlobAccessLevel> {
   const order: BackupBlobAccessLevel[] =
     access === 'private' ? ['private', 'public'] : ['public', 'private']
@@ -195,6 +196,7 @@ export async function putBackupBlobContent(
         access: attempt,
         addRandomSuffix: false,
         allowOverwrite: true,
+        onUploadProgress: onProgress,
         ...(token ? { token } : {}),
       })
       return attempt

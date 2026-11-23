@@ -2,6 +2,7 @@ import type { Payload } from 'payload'
 
 import { list } from '@vercel/blob'
 
+import { serializeBackupUploadProgress } from '../utils/backupUploadProgress'
 import {
   createBlobName,
   getCurrentDbName,
@@ -348,10 +349,42 @@ export async function createBackup(
   )}`
 
   payload.logger.info({ name }, '[backup] Uploading backup to blob storage')
+  const totalBytes =
+    typeof backupFile === 'string' ? Buffer.byteLength(backupFile) : backupFile.byteLength
+  let lastProgressUpdateAt = 0
+  let progressWrites = Promise.resolve()
   if (taskId) {
-    await updateBackupTask(payload, taskId, { message: 'Uploading backup to blob storage' })
+    await updateBackupTask(payload, taskId, {
+      message: serializeBackupUploadProgress({ bytesUploaded: 0, totalBytes }),
+    })
   }
-  await storage.put(name, backupFile)
+  await storage.put(
+    name,
+    backupFile,
+    taskId ?
+      ({ loaded, total }) => {
+        const now = Date.now()
+        if (now - lastProgressUpdateAt < 500 && loaded < total) {
+          return
+        }
+        lastProgressUpdateAt = now
+        const progressTotalBytes = total > 0 ? total : totalBytes
+        const message = serializeBackupUploadProgress({
+          bytesUploaded: loaded,
+          totalBytes: progressTotalBytes,
+        })
+        progressWrites = progressWrites.then(async () => {
+          await updateBackupTask(payload, taskId, { message })
+        })
+      }
+    : undefined,
+  )
+  await progressWrites
+  if (taskId) {
+    await updateBackupTask(payload, taskId, {
+      message: serializeBackupUploadProgress({ bytesUploaded: totalBytes, totalBytes }),
+    })
+  }
 
   payload.logger.info({ name, durationMs: Date.now() - t0 }, '[backup] Backup complete')
 }

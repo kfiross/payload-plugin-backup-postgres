@@ -38,6 +38,11 @@ export interface BackupStorageRef {
   url?: null | string
 }
 
+export interface BackupStorageUploadProgress {
+  loaded: number
+  total: number
+}
+
 /**
  * Provider-agnostic operations the plugin performs on backup archives. Implementations live in
  * `vercelBlob.ts` and `s3.ts`; callers obtain one via {@link resolveBackupStorage}.
@@ -56,6 +61,7 @@ export interface BackupStorageAdapter {
   put(
     pathname: string,
     body: Buffer | string | Uint8Array,
+    onProgress?: (progress: BackupStorageUploadProgress) => void,
   ): Promise<{ pathname: string; url: string }>
   /** Read the full bytes of an archive. */
   read(ref: BackupStorageRef): Promise<Buffer>

@@ -4,6 +4,7 @@ import type {
   BackupStorageAdapter,
   BackupStorageObject,
   BackupStorageRef,
+  BackupStorageUploadProgress,
   BackupStorageValidation,
 } from './types'
 
@@ -50,8 +51,12 @@ export class VercelBlobStorage implements BackupStorageAdapter {
     })
   }
 
-  async put(pathname: string, body: Buffer | string | Uint8Array) {
-    await putBackupBlobContent(pathname, body, this.token, this.access)
+  async put(
+    pathname: string,
+    body: Buffer | string | Uint8Array,
+    onProgress?: (progress: BackupStorageUploadProgress) => void,
+  ) {
+    await putBackupBlobContent(pathname, body, this.token, this.access, onProgress)
     return { pathname, url: '' }
   }
 

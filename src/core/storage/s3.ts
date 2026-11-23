@@ -189,19 +189,31 @@ export class S3BackupStorage implements BackupStorageAdapter {
     }
   }
 
-  async put(pathname: string, body: Buffer | string | Uint8Array) {
+  async put(
+    pathname: string,
+    body: Buffer | string | Uint8Array,
+    onProgress?: (progress: { loaded: number; total: number }) => void,
+  ) {
     const { Upload } = await import('@aws-sdk/lib-storage')
     const client = await this.client()
     const key = this.toKey(pathname)
-    await new Upload({
+    const uploadBody = typeof body === 'string' ? Buffer.from(body) : body
+    const total = uploadBody.byteLength
+    const upload = new Upload({
       client,
       params: {
-        Body: typeof body === 'string' ? Buffer.from(body) : body,
+        Body: uploadBody,
         Bucket: this.cfg.bucket,
         ContentType: contentTypeFor(pathname),
         Key: key,
       },
-    }).done()
+    })
+    if (onProgress) {
+      upload.on('httpUploadProgress', (progress) => {
+        onProgress({ loaded: progress.loaded ?? 0, total })
+      })
+    }
+    await upload.done()
     return { pathname, url: await this.presignGet(key) }
   }
 

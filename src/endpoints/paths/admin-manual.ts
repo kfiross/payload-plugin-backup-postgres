@@ -60,7 +60,12 @@ export function createAdminManualEndpoint(options: BackupPluginOptions): Endpoin
           skipCollections: clientSkip,
           taskId,
         })
-          .then(() => completeBackupTask(payload, taskId, 'Backup completed'))
+          .then(async () => {
+            const completed = await completeBackupTask(payload, taskId, 'Backup completed')
+            if (!completed) {
+              throw new Error('Backup uploaded, but task status could not be updated')
+            }
+          })
           .catch(async (error) => {
             await failBackupTask(payload, taskId, error)
             payload.logger.error({ err: error, taskId }, '[backup-endpoint] Manual backup failed')

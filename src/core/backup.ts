@@ -2,7 +2,10 @@ import type { Payload } from 'payload'
 
 import { list } from '@vercel/blob'
 
-import { serializeBackupUploadProgress } from '../utils/backupUploadProgress'
+import {
+  serializeBackupTableDumpProgress,
+  serializeBackupUploadProgress,
+} from '../utils/backupUploadProgress'
 import {
   createBlobName,
   getCurrentDbName,
@@ -136,7 +139,12 @@ export async function dumpDatabase(
   payload: Payload,
   options: {
     collectMedia?: boolean
-    onTable?: (table: string, rowCount: number) => Promise<void> | void
+    onTable?: (
+      table: string,
+      rowCount: number,
+      tablesCompleted: number,
+      totalTables: number,
+    ) => Promise<void> | void
     skipTables?: string[]
   } = {},
 ): Promise<DumpResult> {
@@ -151,18 +159,21 @@ export async function dumpDatabase(
       )
       const allTables = await listTables(client, schema)
       const tables: PgBackupDocument['tables'] = {}
-      for (const table of allTables) {
+      const tablesToDump = allTables.filter((table) => {
         if (skip.has(table)) {
           payload.logger.debug({ table }, '[backup] Skipping blacklisted table')
-          continue
+          return false
         }
+        return true
+      })
+      for (const [index, table] of tablesToDump.entries()) {
         const { rows } = await client.query<{ n: string; rows: string }>(
           `SELECT count(*)::text AS n, coalesce(json_agg(t), '[]'::json)::text AS rows
              FROM ${qualified(schema, table)} t`,
         )
         const rowCount = Number(rows[0]?.n ?? 0)
         tables[table] = { rowCount, rows: rows[0]?.rows ?? '[]' }
-        await options.onTable?.(table, rowCount)
+        await options.onTable?.(table, rowCount, index + 1, tablesToDump.length)
       }
 
       const mediaPathnames: string[] = []
@@ -318,14 +329,19 @@ export async function createBackup(
   }
   const { doc, mediaPathnames } = await dumpDatabase(payload, {
     collectMedia: includeMedia,
-    onTable: async (table, rowCount) => {
+    onTable: async (table, rowCount, tablesCompleted, totalTables) => {
       payload.logger.debug({ rows: rowCount, table }, '[backup] Table dumped')
       if (taskId) {
         if (await isBackupTaskCancelled(payload, taskId)) {
           throw new Error('Backup cancelled')
         }
         await updateBackupTask(payload, taskId, {
-          message: `Dumped table ${table} (${rowCount} rows)`,
+          message: serializeBackupTableDumpProgress({
+            rowCount,
+            table,
+            tablesCompleted,
+            totalTables,
+          }),
         })
         if (taskId && (await isBackupTaskCancelled(payload, taskId))) {
           throw new Error('Backup cancelled')

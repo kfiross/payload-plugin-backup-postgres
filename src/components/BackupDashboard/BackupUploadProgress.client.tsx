@@ -11,6 +11,7 @@ import {
   BACKUP_TASK_STARTED_EVENT,
   type BackupTaskStartedDetail,
   getBackupTaskDisplayMessage,
+  parseBackupTableDumpProgress,
   parseBackupUploadProgress,
 } from '../../utils/backupUploadProgress'
 import { formatBytes } from '../../utils/formatBytes'
@@ -125,8 +126,11 @@ export const BackupUploadProgress: React.FC = () => {
   }
 
   const upload = task?.message ? parseBackupUploadProgress(task.message) : undefined
+  const tableDump = task?.message ? parseBackupTableDumpProgress(task.message) : undefined
   const percentage =
-    upload ? Math.min(100, Math.floor((upload.bytesUploaded / upload.totalBytes) * 100)) : undefined
+    upload ? Math.min(100, Math.floor((upload.bytesUploaded / upload.totalBytes) * 100))
+    : tableDump ? Math.floor((tableDump.tablesCompleted / tableDump.totalTables) * 100)
+    : undefined
   const isFailed = task?.status === 'failed' || progressError !== null
   const canCancel =
     task === null || task.status === 'queued' || task.status === 'running'
@@ -155,6 +159,10 @@ export const BackupUploadProgress: React.FC = () => {
         {upload && percentage !== undefined ?
           <span className="backup-dashboard__upload-progress-size">
             {formatBytes(upload.bytesUploaded)} / {formatBytes(upload.totalBytes)} · {percentage}%
+          </span>
+        : tableDump && percentage !== undefined ?
+          <span className="backup-dashboard__upload-progress-size">
+            {tableDump.tablesCompleted}/{tableDump.totalTables} tables · {percentage}%
           </span>
         : null}
       </div>

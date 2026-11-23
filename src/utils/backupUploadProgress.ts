@@ -3,6 +3,13 @@ export interface BackupUploadProgress {
   totalBytes: number
 }
 
+export interface BackupTableDumpProgress {
+  rowCount: number
+  table: string
+  tablesCompleted: number
+  totalTables: number
+}
+
 export const BACKUP_TASK_STARTED_EVENT = 'payload-backup-postgres-task-started'
 
 export interface BackupTaskStartedDetail {
@@ -12,6 +19,10 @@ export interface BackupTaskStartedDetail {
 
 export function serializeBackupUploadProgress(progress: BackupUploadProgress): string {
   return JSON.stringify({ ...progress, phase: 'uploading' })
+}
+
+export function serializeBackupTableDumpProgress(progress: BackupTableDumpProgress): string {
+  return JSON.stringify({ ...progress, phase: 'dumping' })
 }
 
 export function parseBackupUploadProgress(message: string): BackupUploadProgress | undefined {
@@ -42,6 +53,48 @@ export function parseBackupUploadProgress(message: string): BackupUploadProgress
   return undefined
 }
 
+export function parseBackupTableDumpProgress(message: string): BackupTableDumpProgress | undefined {
+  try {
+    const parsed: unknown = JSON.parse(message)
+    if (
+      parsed &&
+      typeof parsed === 'object' &&
+      'phase' in parsed &&
+      parsed.phase === 'dumping' &&
+      'table' in parsed &&
+      typeof parsed.table === 'string' &&
+      'rowCount' in parsed &&
+      typeof parsed.rowCount === 'number' &&
+      Number.isInteger(parsed.rowCount) &&
+      parsed.rowCount >= 0 &&
+      'tablesCompleted' in parsed &&
+      typeof parsed.tablesCompleted === 'number' &&
+      Number.isInteger(parsed.tablesCompleted) &&
+      parsed.tablesCompleted > 0 &&
+      'totalTables' in parsed &&
+      typeof parsed.totalTables === 'number' &&
+      Number.isInteger(parsed.totalTables) &&
+      parsed.totalTables >= parsed.tablesCompleted
+    ) {
+      return {
+        rowCount: parsed.rowCount,
+        table: parsed.table,
+        tablesCompleted: parsed.tablesCompleted,
+        totalTables: parsed.totalTables,
+      }
+    }
+  } catch {
+    return undefined
+  }
+  return undefined
+}
+
 export function getBackupTaskDisplayMessage(message: string): string {
-  return parseBackupUploadProgress(message) ? 'Uploading backup to blob storage' : message
+  if (parseBackupUploadProgress(message)) {
+    return 'Uploading backup to blob storage'
+  }
+  const tableDump = parseBackupTableDumpProgress(message)
+  return tableDump ?
+      `Dumped table ${tableDump.table} (${tableDump.rowCount} rows)`
+    : message
 }

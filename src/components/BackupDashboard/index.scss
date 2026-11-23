@@ -24,15 +24,6 @@
   flex-direction: column;
   gap: base(0.2);
 
-  &__collapsible-title {
-    font-size: 13px;
-    font-weight: 600;
-    line-height: 1.3;
-    color: var(--theme-elevation-900);
-    letter-spacing: -0.01em;
-    pointer-events: none;
-  }
-
   &__backup-list-toolbar {
     display: flex;
     justify-content: flex-start;
@@ -43,6 +34,28 @@
     > .btn {
       margin-block: 0;
     }
+  }
+
+  &__backup-list {
+    overflow: hidden;
+    border: 1px solid var(--theme-elevation-150);
+    border-radius: base(0.25);
+    background: var(--theme-elevation-0);
+  }
+
+  &__backup-list-heading {
+    padding: base(0.65) base(1);
+    border-bottom: 1px solid var(--theme-elevation-100);
+    background: var(--theme-elevation-50, #f5f5f5);
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--theme-elevation-900);
+    letter-spacing: -0.01em;
+  }
+
+  &__backup-list-content {
+    padding: base(0.75);
   }
 
   &__filter-btn {

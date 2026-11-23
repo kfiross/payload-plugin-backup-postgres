@@ -1,6 +1,6 @@
 'use client'
 
-import { Button, Collapsible } from '@payloadcms/ui'
+import { Button } from '@payloadcms/ui'
 import { useCallback, useId, useMemo, useRef, useState } from 'react'
 
 import type { TransformBlobNameResult } from '../../utils/index'
@@ -200,93 +200,98 @@ export const BackupListCollapsible: React.FC<BackupListCollapsibleProps> = ({
 
   return (
     <>
-      <Collapsible
-        header={<span className="backup-dashboard__collapsible-title">Backup list</span>}
-        initCollapsed={true}
+      <section
+        aria-labelledby={`${uid}-backup-list-title`}
+        className="backup-dashboard__backup-list"
       >
-        <div className="backup-dashboard__backup-list-toolbar">{filtersButton}</div>
-        {blobs.length === 0 ?
-          <p className="backup-dashboard__list-empty">No backups yet</p>
-        : visibleRows.length === 0 ?
-          <p className="backup-dashboard__list-empty">No backups match the current filters</p>
-        : visibleRows.map(({ blob, displayAt, parsed }) => {
-            const { type, collectionCount, dbName, fileType, hostname, label } = parsed
-            const isCurrentDb = currentDbName === dbName
-            const isCurrentHostname = currentHostname === hostname
+        <div className="backup-dashboard__backup-list-heading" id={`${uid}-backup-list-title`}>
+          Backups list
+        </div>
+        <div className="backup-dashboard__backup-list-content">
+          <div className="backup-dashboard__backup-list-toolbar">{filtersButton}</div>
+          {blobs.length === 0 ?
+            <p className="backup-dashboard__list-empty">No backups yet</p>
+          : visibleRows.length === 0 ?
+            <p className="backup-dashboard__list-empty">No backups match the current filters</p>
+          : visibleRows.map(({ blob, displayAt, parsed }) => {
+              const { type, collectionCount, dbName, fileType, hostname, label } = parsed
+              const isCurrentDb = currentDbName === dbName
+              const isCurrentHostname = currentHostname === hostname
 
-            return (
-              <div className="backup-item" key={blob.pathname}>
-                <div className="backup-item__main">
-                  <div className="backup-item__primary">
-                    <time
-                      className="backup-item__time"
-                      dateTime={displayAt.toISOString()}
-                      suppressHydrationWarning
-                    >
-                      {displayAt.toLocaleString(i18nLanguage)}
-                    </time>
-                    <span
-                      className={`backup-item__pill backup-item__pill--kind backup-item__pill--${type === 'cron' ? 'cron' : 'manual'}`}
-                    >
-                      {type === 'cron' ? 'Cron backup' : 'Manual backup'}
-                    </span>
-                    {label ?
-                      <span
-                        className="backup-item__pill backup-item__pill--label"
-                        title={`Label: ${label}`}
+              return (
+                <div className="backup-item" key={blob.pathname}>
+                  <div className="backup-item__main">
+                    <div className="backup-item__primary">
+                      <time
+                        className="backup-item__time"
+                        dateTime={displayAt.toISOString()}
+                        suppressHydrationWarning
                       >
-                        <span className="backup-item__pill-key">Label</span>
-                        {label}
+                        {displayAt.toLocaleString(i18nLanguage)}
+                      </time>
+                      <span
+                        className={`backup-item__pill backup-item__pill--kind backup-item__pill--${type === 'cron' ? 'cron' : 'manual'}`}
+                      >
+                        {type === 'cron' ? 'Cron backup' : 'Manual backup'}
                       </span>
-                    : null}
+                      {label ?
+                        <span
+                          className="backup-item__pill backup-item__pill--label"
+                          title={`Label: ${label}`}
+                        >
+                          <span className="backup-item__pill-key">Label</span>
+                          {label}
+                        </span>
+                      : null}
+                    </div>
+                    <div className="backup-item__meta">
+                      <span
+                        className={`backup-item__pill backup-item__pill--db${isCurrentDb ? '' : ' backup-item__pill--warn'}`}
+                      >
+                        <span className="backup-item__pill-key">
+                          {isCurrentDb ? 'DB' : 'other DB'}
+                        </span>
+                        {dbName || 'Unknown'}
+                      </span>
+                      <span
+                        className={`backup-item__pill backup-item__pill--host${isCurrentHostname ? '' : ' backup-item__pill--warn'}`}
+                      >
+                        <span className="backup-item__pill-key">Host</span>
+                        {hostname || 'Unknown'}
+                      </span>
+                      {typeof collectionCount === 'number' ?
+                        <span className="backup-item__pill backup-item__pill--collections">
+                          <span className="backup-item__pill-key">Collections</span>
+                          {collectionCount}
+                        </span>
+                      : null}
+                      {fileType === 'tar.gz' ?
+                        <span className="backup-item__pill backup-item__pill--media">With media</span>
+                      : fileType === 'json' ?
+                        <span className="backup-item__pill backup-item__pill--media">
+                          Without media
+                        </span>
+                      : null}
+                      <span
+                        className="backup-item__pill backup-item__pill--size"
+                        title={`${blob.size.toLocaleString(i18nLanguage)} bytes`}
+                      >
+                        <span className="backup-item__pill-key">Size</span>
+                        <span className="backup-item__size-value">{formatBytes(blob.size)}</span>
+                      </span>
+                    </div>
                   </div>
-                  <div className="backup-item__meta">
-                    <span
-                      className={`backup-item__pill backup-item__pill--db${isCurrentDb ? '' : ' backup-item__pill--warn'}`}
-                    >
-                      <span className="backup-item__pill-key">
-                        {isCurrentDb ? 'DB' : 'other DB'}
-                      </span>
-                      {dbName || 'Unknown'}
-                    </span>
-                    <span
-                      className={`backup-item__pill backup-item__pill--host${isCurrentHostname ? '' : ' backup-item__pill--warn'}`}
-                    >
-                      <span className="backup-item__pill-key">Host</span>
-                      {hostname || 'Unknown'}
-                    </span>
-                    {typeof collectionCount === 'number' ?
-                      <span className="backup-item__pill backup-item__pill--collections">
-                        <span className="backup-item__pill-key">Collections</span>
-                        {collectionCount}
-                      </span>
-                    : null}
-                    {fileType === 'tar.gz' ?
-                      <span className="backup-item__pill backup-item__pill--media">With media</span>
-                    : fileType === 'json' ?
-                      <span className="backup-item__pill backup-item__pill--media">
-                        Without media
-                      </span>
-                    : null}
-                    <span
-                      className="backup-item__pill backup-item__pill--size"
-                      title={`${blob.size.toLocaleString(i18nLanguage)} bytes`}
-                    >
-                      <span className="backup-item__pill-key">Size</span>
-                      <span className="backup-item__size-value">{formatBytes(blob.size)}</span>
-                    </span>
-                  </div>
+                  <BackupItemActions
+                    downloadUrl={blob.downloadUrl}
+                    pathname={blob.pathname}
+                    url={blob.url}
+                  />
                 </div>
-                <BackupItemActions
-                  downloadUrl={blob.downloadUrl}
-                  pathname={blob.pathname}
-                  url={blob.url}
-                />
-              </div>
-            )
-          })
-        }
-      </Collapsible>
+              )
+            })
+          }
+        </div>
+      </section>
 
       <dialog
         className="backup-confirm-dialog backup-confirm-dialog--backup-list-filters"

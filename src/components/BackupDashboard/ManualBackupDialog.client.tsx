@@ -205,6 +205,7 @@ export const ManualBackupDialog: React.FC = () => {
             idleLabel="Start backup"
             kind="backup"
             onComplete={refreshAfterBackupSuccess}
+            onFailure={() => dialogRef.current?.close()}
             onStarted={() => dialogRef.current?.close()}
             pendingLabel="Creating backup…"
           />

@@ -1,6 +1,6 @@
 'use client'
 
-import { Button, Pill } from '@payloadcms/ui'
+import { Button, Pill, toast } from '@payloadcms/ui'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
@@ -37,6 +37,8 @@ type TaskActionButtonProps = {
   kind: BackupTaskProgress['kind']
   /** Invoked once when the task reaches a successful terminal state (`completed` or `completed_with_warnings`). */
   onComplete?: () => void
+  /** Invoked once when the task reaches the failed state. */
+  onFailure?: () => void
   /** Invoked after the server accepts the task. */
   onStarted?: () => void
   pendingLabel: string
@@ -64,6 +66,7 @@ export const TaskActionButton: React.FC<TaskActionButtonProps> = ({
   idleLabel,
   kind,
   onComplete,
+  onFailure,
   onStarted,
   pendingLabel,
   redirectOnComplete,
@@ -73,6 +76,7 @@ export const TaskActionButton: React.FC<TaskActionButtonProps> = ({
   const dangerDialogRef = useRef<HTMLDialogElement>(null)
   /** Avoid firing `onComplete` twice if the polling effect re-runs while status stays `completed`. */
   const completeNotifyForTaskIdRef = useRef<null | string>(null)
+  const failureNotifyForTaskIdRef = useRef<null | string>(null)
   /** Lets the task GET succeed after restore replaces `users` (session becomes invalid). */
   const pollSecretRef = useRef<null | string>(null)
   const [error, setError] = useState<null | string>(null)
@@ -85,6 +89,16 @@ export const TaskActionButton: React.FC<TaskActionButtonProps> = ({
   const warnings = !error && task?.warnings ? task.warnings : ''
 
   const isTerminal = task ? isTerminalTaskStatus(task.status) : false
+
+  useEffect(() => {
+    if (task?.status !== 'failed' || failureNotifyForTaskIdRef.current === task.id) {
+      return
+    }
+
+    failureNotifyForTaskIdRef.current = task.id
+    toast.error(task.error || getBackupTaskDisplayMessage(task.message) || 'Task failed')
+    onFailure?.()
+  }, [onFailure, task?.error, task?.id, task?.message, task?.status])
 
   const label = useMemo(() => {
     if (isBusy) {
@@ -231,6 +245,7 @@ export const TaskActionButton: React.FC<TaskActionButtonProps> = ({
       setIsStarting(true)
       pollSecretRef.current = null
       completeNotifyForTaskIdRef.current = null
+      failureNotifyForTaskIdRef.current = null
       setTask(null)
 
       const response = await fetch(endpoint, {

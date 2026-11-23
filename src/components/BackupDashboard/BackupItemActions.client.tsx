@@ -63,6 +63,7 @@ export const BackupItemActions: React.FC<BackupItemActionsProps> = ({
             idleLabel="Yes, delete"
             kind="delete"
             onComplete={() => deleteDialogRef.current?.close()}
+            onFailure={() => deleteDialogRef.current?.close()}
             pendingLabel="Deleting..."
             refreshOnComplete={true}
           />

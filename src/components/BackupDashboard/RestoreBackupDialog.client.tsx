@@ -484,6 +484,7 @@ export const RestoreBackupDialog: React.FC<RestoreBackupDialogProps> = ({
             idleLabel="Yes, restore"
             kind="restore"
             onComplete={closeModalAfterRestoreSuccess}
+            onFailure={() => dialogRef.current?.close()}
             pendingLabel="Restoring..."
             redirectOnComplete={willAutoLogout ? '/admin/logout' : undefined}
           />

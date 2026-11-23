@@ -255,6 +255,10 @@ describe('postgres backup & restore', () => {
     })
     expect(preview.fileKind).toBe('json')
     expect(preview.groups.find((g) => g.groupId === 'categories')?.main?.docCount).toBe(3)
+    expect(preview.backupCollections).toEqual(
+      expect.arrayContaining(['Posts (posts)', 'Categories (categories)', 'Media (media)']),
+    )
+    expect(preview.backupCollections).not.toContain('Backup Tasks (backup-tasks)')
   })
 
   it('replace-restore reverts deletes, edits, inserts (incl. FK cycles + self refs)', async () => {

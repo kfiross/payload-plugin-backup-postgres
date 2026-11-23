@@ -51,7 +51,8 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
-    "dist"
+    "dist",
+    "docs/screenshots"
   ],
   "scripts": {
     "release": "bun run build && changeset publish",

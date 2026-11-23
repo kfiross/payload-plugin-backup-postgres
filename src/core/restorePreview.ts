@@ -33,6 +33,8 @@ export type RestorePreviewGroup = {
 }
 
 export type RestorePreviewResponse = {
+  /** Localized collection names represented by tables in the archive (excludes globals). */
+  backupCollections: string[]
   fileKind: RestorePreviewFileKind
   groups: RestorePreviewGroup[]
   mediaBlobCount: number
@@ -296,7 +298,23 @@ export function buildRestorePreviewGroups(
     preferredLocales: options.preferredLocales,
     sortLikeAdminNav: true,
   })
-  return { fileKind: parsed.fileKind, groups, mediaBlobCount: parsed.mediaBlobCount }
+  const collectionSlugs = new Set(
+    (payload.config.collections ?? []).map((collection) => collection.slug),
+  )
+  const backupCollections = buildCollectionPreviewGroups(payload, parsed.countsByTable, {
+    excludeGroups,
+    includeEmptyCollections: true,
+    preferredLocales: options.preferredLocales,
+    sortLikeAdminNav: true,
+  })
+    .filter((group) => collectionSlugs.has(group.groupId))
+    .map((group) => group.displayTitle)
+  return {
+    backupCollections,
+    fileKind: parsed.fileKind,
+    groups,
+    mediaBlobCount: parsed.mediaBlobCount,
+  }
 }
 
 export async function getRestorePreviewForAdminRestore(

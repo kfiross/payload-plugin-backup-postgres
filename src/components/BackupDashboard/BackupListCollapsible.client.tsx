@@ -7,6 +7,7 @@ import type { TransformBlobNameResult } from '../../utils/index'
 
 import { closeNativeDialogOnBackdropPointer } from '../../utils/dialogBackdrop'
 import { formatBytes, getBackupSortTimeMs, transformBlobName } from '../../utils/index'
+import { BackupCollectionsDetails } from './BackupCollectionsDetails.client'
 import { BackupItemActions } from './BackupItemActions.client'
 
 export interface SerializableBackupBlob {
@@ -259,12 +260,11 @@ export const BackupListCollapsible: React.FC<BackupListCollapsibleProps> = ({
                         <span className="backup-item__pill-key">Host</span>
                         {hostname || 'Unknown'}
                       </span>
-                      {typeof collectionCount === 'number' ?
-                        <span className="backup-item__pill backup-item__pill--collections">
-                          <span className="backup-item__pill-key">Collections</span>
-                          {collectionCount}
-                        </span>
-                      : null}
+                      <BackupCollectionsDetails
+                        collectionCount={collectionCount}
+                        downloadUrl={blob.downloadUrl}
+                        pathname={blob.pathname}
+                      />
                       {fileType === 'tar.gz' ?
                         <span className="backup-item__pill backup-item__pill--media">With media</span>
                       : fileType === 'json' ?

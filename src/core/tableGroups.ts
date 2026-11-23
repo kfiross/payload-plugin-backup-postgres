@@ -18,6 +18,11 @@ export type TableOwner = {
 
 type Root = { kind: 'collection' | 'global'; root: string; slug: string; versions: boolean }
 
+export const BACKUP_INTERNAL_COLLECTION_SLUGS: ReadonlySet<string> = new Set([
+  'backup-numbers',
+  'backup-tasks',
+])
+
 /** Mirrors Payload's `toSnakeCase` for slugs (`my-posts` / `myPosts` → `my_posts`). */
 export function slugToSnake(slug: string): string {
   return slug
@@ -70,6 +75,28 @@ export function resolveTableOwners(
     )
   }
   return out
+}
+
+/** Counts represented Payload collections, not their physical PostgreSQL tables. */
+export function countCollectionGroups(
+  payload: Payload,
+  tables: string[],
+  options: { excludeSlugs?: ReadonlySet<string>; tableNameMap?: Map<string, string> } = {},
+): number {
+  const collectionSlugs = new Set(
+    (payload.config.collections ?? []).map((collection) => collection.slug),
+  )
+  const owners = resolveTableOwners(payload, tables, options.tableNameMap)
+  return new Set(
+    [...owners.values()]
+      .filter(
+        (owner) =>
+          owner.kind === 'collection' &&
+          collectionSlugs.has(owner.slug) &&
+          !options.excludeSlugs?.has(owner.slug),
+      )
+      .map((owner) => owner.slug),
+  ).size
 }
 
 /** Main + version root table names for a slug (used for row counts in the UI). */

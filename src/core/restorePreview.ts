@@ -4,13 +4,14 @@ import { readBackupArchiveBytes, resolveArchiveFileReference } from './backupArc
 import { type BackupBlobAccessLevel } from './backupBlobIO'
 import { getPgDb } from './db'
 import { loadPgArchive } from './pgArchive'
-import { resolveTableOwners, rootTablesForSlug } from './tableGroups'
+import {
+  BACKUP_INTERNAL_COLLECTION_SLUGS,
+  resolveTableOwners,
+  rootTablesForSlug,
+} from './tableGroups'
 
 /** Payload slugs whose replacement invalidates the current admin session. */
 const AUTH_SESSION_SLUGS = new Set(['payload-preferences', 'roles', 'sessions', 'users'])
-
-/** Groups never listed in the UI (plugin-internal progress rows). */
-const DEFAULT_EXCLUDED_GROUPS = new Set(['backup-numbers', 'backup-tasks'])
 
 export type RestorePreviewFileKind = 'json' | 'tar-gzip'
 
@@ -165,7 +166,7 @@ type GroupAgg = {
 function mergeConfiguredZeros(
   payload: Payload,
   counts: Record<string, number>,
-  excludeGroups: Set<string>,
+  excludeGroups: ReadonlySet<string>,
   tableNameMap?: Map<string, string>,
 ): Record<string, number> {
   const merged = { ...counts }
@@ -199,7 +200,7 @@ export function buildCollectionPreviewGroups(
   countsByTable: Record<string, number>,
   options: {
     /** Payload slugs (or raw table names) to hide. Default: `backup-tasks`. */
-    excludeGroups?: Set<string>
+    excludeGroups?: ReadonlySet<string>
     /** When true, list groups whose tables are all empty (e.g. manual backup UI). Default false. */
     includeEmptyCollections?: boolean
     preferredLocales?: string[]
@@ -209,7 +210,7 @@ export function buildCollectionPreviewGroups(
 ): RestorePreviewGroup[] {
   const preferredLocales =
     options.preferredLocales?.length ? options.preferredLocales : ['de', 'en']
-  const excludeGroups = options.excludeGroups ?? DEFAULT_EXCLUDED_GROUPS
+  const excludeGroups = options.excludeGroups ?? BACKUP_INTERNAL_COLLECTION_SLUGS
   const includeEmptyCollections = options.includeEmptyCollections ?? false
   const sortLikeAdminNav = options.sortLikeAdminNav ?? false
   const tableNameMap = safeTableNameMap(payload)
@@ -283,9 +284,9 @@ export function buildRestorePreviewGroups(
     fileKind: RestorePreviewFileKind
     mediaBlobCount: number
   },
-  options: { excludeGroups?: Set<string>; preferredLocales?: string[] } = {},
+  options: { excludeGroups?: ReadonlySet<string>; preferredLocales?: string[] } = {},
 ): RestorePreviewResponse {
-  const excludeGroups = options.excludeGroups ?? DEFAULT_EXCLUDED_GROUPS
+  const excludeGroups = options.excludeGroups ?? BACKUP_INTERNAL_COLLECTION_SLUGS
   const counts = mergeConfiguredZeros(
     payload,
     parsed.countsByTable,
@@ -305,7 +306,6 @@ export function buildRestorePreviewGroups(
     excludeGroups,
     includeEmptyCollections: true,
     preferredLocales: options.preferredLocales,
-    sortLikeAdminNav: true,
   })
     .filter((group) => collectionSlugs.has(group.groupId))
     .map((group) => group.displayTitle)

@@ -33,7 +33,11 @@ import {
   serializeBackupDocument,
 } from './pgArchive'
 import { getBackupStorageKind, resolveBackupStorage } from './storage'
-import { resolveTableOwners } from './tableGroups'
+import {
+  BACKUP_INTERNAL_COLLECTION_SLUGS,
+  countCollectionGroups,
+  resolveTableOwners,
+} from './tableGroups'
 import { isBackupTaskCancelled, updateBackupTask } from './taskProgress'
 
 export { DATABASE_FILE_NAME } from './pgArchive'
@@ -368,7 +372,10 @@ export async function createBackup(
   })
 
   const databaseFile = serializeBackupDocument(doc)
-  const includedTableCount = Object.keys(doc.tables).length
+  const includedCollectionCount = countCollectionGroups(payload, Object.keys(doc.tables), {
+    excludeSlugs: BACKUP_INTERNAL_COLLECTION_SLUGS,
+    tableNameMap: getPgDb(payload).tableNameMap,
+  })
   const backupTimestampMs = Date.now()
 
   if (includeMedia) {
@@ -389,7 +396,7 @@ export async function createBackup(
     type,
     currentDbName,
     currentHostname,
-    includedTableCount,
+    includedCollectionCount,
     backupTimestampMs,
     includeMedia ? 'tar.gz' : 'json',
     label || undefined,

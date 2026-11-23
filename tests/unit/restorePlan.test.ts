@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
+import type { Payload } from 'payload'
 import type { ForeignKey } from '../../src/core/db'
 
 import { findOwnershipKeys, planRestoreOrder } from '../../src/core/restore'
-import { slugToSnake } from '../../src/core/tableGroups'
+import { countCollectionGroups, slugToSnake } from '../../src/core/tableGroups'
+import { buildRestorePreviewGroups } from '../../src/core/restorePreview'
 
 const fk = (
   table: string,
@@ -89,5 +91,45 @@ describe('slugToSnake', () => {
     expect(slugToSnake('backup-tasks')).toBe('backup_tasks')
     expect(slugToSnake('siteSettings')).toBe('site_settings')
     expect(slugToSnake('payload-locked-documents')).toBe('payload_locked_documents')
+  })
+})
+
+describe('countCollectionGroups', () => {
+  it('counts included collections once, excluding globals and internal collections', () => {
+    const payload = {
+      config: {
+        collections: [{ slug: 'posts' }, { slug: 'backup-tasks' }],
+        globals: [{ slug: 'site-settings' }],
+      },
+    } as Payload
+
+    expect(
+      countCollectionGroups(
+        payload,
+        ['posts', 'posts_rels', '_posts_v', 'backup_tasks', 'site_settings', 'unknown_table'],
+        { excludeSlugs: new Set(['backup-tasks']) },
+      ),
+    ).toBe(1)
+  })
+})
+
+describe('buildRestorePreviewGroups', () => {
+  it('lists backed-up collections alphabetically', () => {
+    const payload = {
+      config: {
+        collections: [
+          { slug: 'zebras', labels: { plural: 'Zebras' } },
+          { slug: 'apples', labels: { plural: 'Apples' } },
+        ],
+      },
+    } as Payload
+
+    const preview = buildRestorePreviewGroups(payload, {
+      countsByTable: { zebras: 1, apples: 1 },
+      fileKind: 'json',
+      mediaBlobCount: 0,
+    })
+
+    expect(preview.backupCollections).toEqual(['Apples (apples)', 'Zebras (zebras)'])
   })
 })

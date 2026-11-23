@@ -113,10 +113,10 @@ export const BackupCollectionsDetails: React.FC<BackupCollectionsDetailsProps> =
           )}
           {phase === 'ready' &&
             (collections.length > 0 ?
-              <ul aria-label="Collections in backup" className="backup-item__collections-list">
+              <ul aria-label="Collections in backup" className="restore-preview__all-list">
                 {collections.map((collection) => (
-                  <li className="backup-item__collections-name" key={collection}>
-                    {collection}
+                  <li className="restore-preview__all-item" key={collection}>
+                    <span className="restore-preview__all-name">{collection}</span>
                   </li>
                 ))}
               </ul>

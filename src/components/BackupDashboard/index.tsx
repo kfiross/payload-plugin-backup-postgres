@@ -13,6 +13,7 @@ import {
   getCurrentDbName,
   getCurrentHostname,
   isUserAllowedByEnvRoles,
+  formatBytes,
   transformBlobName,
 } from '../../utils/index'
 import { backupDashboardInlineCss } from './backupDashboardInlineCss'
@@ -140,6 +141,7 @@ export const BackupDashboardView: React.FC<BackupDashboardProps> = async ({ i18n
     const tb = getBackupSortTimeMs(transformBlobName(b.pathname), new Date(b.uploadedAt))
     return tb - ta
   })
+  const archivesTotal = sortedBlobs.reduce((total, blob) => total + blob.size, 0)
   const currentHostname = getCurrentHostname()
   const currentDbName = getCurrentDbName()
 
@@ -186,6 +188,13 @@ export const BackupDashboardView: React.FC<BackupDashboardProps> = async ({ i18n
             <span className="backup-dashboard__toolbar-pill">
               <span className="backup-dashboard__toolbar-key">Total</span>
               {sortedBlobs.length} backup{sortedBlobs.length === 1 ? '' : 's'}
+            </span>
+            <span
+              className="backup-dashboard__toolbar-pill"
+              title="Total size of listed backup archives only (up to 1,000 objects), not the full Vercel Blob store."
+            >
+              <span className="backup-dashboard__toolbar-key">Archives total</span>
+              {formatBytes(archivesTotal)}
             </span>
             <span className="backup-dashboard__toolbar-pill">
               <span className="backup-dashboard__toolbar-key">Last backup</span>

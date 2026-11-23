@@ -32,6 +32,10 @@ Backups are **not** interchangeable between the two plugins.
 
 ![Backup dashboard showing the backup list and actions](./docs/screenshots/backup-dashboard.png)
 
+The dashboard's **Archives total** is the combined size of the listed backup
+archives only, not the full Vercel Blob store. The listing is limited to 1,000
+objects.
+
 ### Task progress
 
 ![Backup task progress while a table is being dumped](./docs/screenshots/backup-progress.png)

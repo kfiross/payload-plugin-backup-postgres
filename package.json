@@ -1,6 +1,6 @@
 {
   "name": "payload-plugin-backup-postgres",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Payload CMS plugin for PostgreSQL backup and recovery via Vercel Blob or AWS S3 (S3-compatible: R2, MinIO)",
   "keywords": [
     "payload",

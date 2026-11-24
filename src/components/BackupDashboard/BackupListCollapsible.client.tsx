@@ -216,7 +216,7 @@ export const BackupListCollapsible: React.FC<BackupListCollapsibleProps> = ({
           : visibleRows.length === 0 ?
             <p className="backup-dashboard__list-empty">No backups match the current filters</p>
           : visibleRows.map(({ blob, displayAt, parsed }) => {
-              const { type, collectionCount, dbName, fileType, hostname, label } = parsed
+              const { type, dbName, fileType, hostname, label } = parsed
               const isCurrentDb = currentDbName === dbName
               const isCurrentHostname = currentHostname === hostname
 
@@ -267,7 +267,6 @@ export const BackupListCollapsible: React.FC<BackupListCollapsibleProps> = ({
                         {hostname || 'Unknown'}
                       </span>
                       <BackupCollectionsDetails
-                        collectionCount={collectionCount}
                         downloadUrl={blob.downloadUrl}
                         pathname={blob.pathname}
                       />

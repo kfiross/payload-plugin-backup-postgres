@@ -111,6 +111,35 @@ describe('countCollectionGroups', () => {
       ),
     ).toBe(1)
   })
+
+  it('counts custom dbName collection roots, version tables, and relation tables as one group', () => {
+    const payload = {
+      config: {
+        collections: [
+          { slug: 'articles', dbName: 'article_documents' },
+          { slug: 'authors' },
+        ],
+        globals: [{ slug: 'site-settings', dbName: 'site_settings_data' }],
+      },
+    } as Payload
+
+    expect(
+      countCollectionGroups(
+        payload,
+        [
+          'article_documents',
+          'article_documents_rels',
+          '_article_documents_v',
+          '_article_documents_v_rels',
+          'writer_records',
+          'writer_records_rels',
+          'site_settings_data',
+          'unknown_table',
+        ],
+        { tableNameMap: new Map([['authors', 'writer_records']]) },
+      ),
+    ).toBe(2)
+  })
 })
 
 describe('buildRestorePreviewGroups', () => {

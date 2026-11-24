@@ -1,7 +1,7 @@
 'use client'
 
 import { Button } from '@payloadcms/ui'
-import { useCallback, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useRef, useState } from 'react'
 
 import type { RestorePreviewResponse } from '../../core/restorePreview'
 
@@ -9,7 +9,6 @@ import { backupPluginPublicApiPaths } from '../../publicApiPaths'
 import { closeNativeDialogOnBackdropPointer } from '../../utils/dialogBackdrop'
 
 type BackupCollectionsDetailsProps = {
-  collectionCount?: number
   downloadUrl: string
   pathname: string
 }
@@ -19,7 +18,6 @@ type BackupCollectionsResponse = {
 } & Pick<RestorePreviewResponse, 'backupCollections'>
 
 export const BackupCollectionsDetails: React.FC<BackupCollectionsDetailsProps> = ({
-  collectionCount,
   downloadUrl,
   pathname,
 }) => {
@@ -55,6 +53,12 @@ export const BackupCollectionsDetails: React.FC<BackupCollectionsDetailsProps> =
     }
   }, [downloadUrl, pathname])
 
+  useEffect(() => {
+    if (phase === 'idle') {
+      void loadCollections()
+    }
+  }, [loadCollections, phase])
+
   const openDetails = () => {
     setIsOpen(true)
     dialogRef.current?.showModal()
@@ -63,7 +67,7 @@ export const BackupCollectionsDetails: React.FC<BackupCollectionsDetailsProps> =
     }
   }
 
-  const displayCount = phase === 'ready' ? collections.length : collectionCount
+  const displayCount = phase === 'ready' ? collections.length : undefined
 
   return (
     <div className="backup-item__collections">

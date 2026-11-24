@@ -44,6 +44,7 @@ type TaskActionButtonProps = {
   pendingLabel: string
   redirectOnComplete?: string
   refreshOnComplete?: boolean
+  statusAboveButton?: boolean
 }
 
 function isTerminalTaskStatus(status: BackupTaskProgress['status']): boolean {
@@ -71,6 +72,7 @@ export const TaskActionButton: React.FC<TaskActionButtonProps> = ({
   pendingLabel,
   redirectOnComplete,
   refreshOnComplete = false,
+  statusAboveButton = false,
 }) => {
   const router = useRouter()
   const dangerDialogRef = useRef<HTMLDialogElement>(null)
@@ -155,6 +157,26 @@ export const TaskActionButton: React.FC<TaskActionButtonProps> = ({
 
     return 'Idle'
   }, [error, isBusy, isDoneWithWarnings, task?.status])
+
+  const status =
+    task !== null || error !== null ?
+      <div aria-live="polite" className="backup-task-status-slot">
+        <Pill pillStyle={pillStyle} size="small">
+          {statusLabel}
+        </Pill>
+        <div className="backup-task-status__details">
+          {message ?
+            <span className="backup-task-status__message">{message}</span>
+          : null}
+          {warnings ?
+            <span className="backup-task-status__warnings">{warnings}</span>
+          : null}
+          {task?.error && task.status === 'failed' ?
+            <span className="backup-task-status__error">{task.error}</span>
+          : null}
+        </div>
+      </div>
+    : null
 
   useEffect(() => {
     if (!task?.id || !isTerminal) {
@@ -302,7 +324,10 @@ export const TaskActionButton: React.FC<TaskActionButtonProps> = ({
 
   return (
     <>
-      <div className="backup-task-action">
+      <div
+        className={`backup-task-action${statusAboveButton ? ' backup-task-action--status-above' : ''}`}
+      >
+        {statusAboveButton ? status : null}
         <Button
           buttonStyle={buttonStyle}
           className={className}
@@ -312,25 +337,7 @@ export const TaskActionButton: React.FC<TaskActionButtonProps> = ({
         >
           {label}
         </Button>
-
-        {(task !== null || error !== null) && (
-          <div aria-live="polite" className="backup-task-status-slot">
-            <Pill pillStyle={pillStyle} size="small">
-              {statusLabel}
-            </Pill>
-            <div className="backup-task-status__details">
-              {message ?
-                <span className="backup-task-status__message">{message}</span>
-              : null}
-              {warnings ?
-                <span className="backup-task-status__warnings">{warnings}</span>
-              : null}
-              {task?.error && task.status === 'failed' ?
-                <span className="backup-task-status__error">{task.error}</span>
-              : null}
-            </div>
-          </div>
-        )}
+        {!statusAboveButton ? status : null}
       </div>
 
       {dangerConfirm ?

@@ -599,6 +599,14 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .backup-task-action--status-above {
+      display: contents;
+    }
+
+    .backup-task-status-slot {
+      grid-column: 1 / -1;
+    }
+
     .backup-task-action,
     .backup-confirm-dialog__not-now-button {
       width: 100%;
@@ -890,6 +898,7 @@
     font-size: 12px;
     line-height: 1.4;
     color: var(--theme-elevation-700);
+    overflow-wrap: anywhere;
   }
 
   .backup-task-status__warnings {

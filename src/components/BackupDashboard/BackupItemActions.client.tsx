@@ -71,6 +71,7 @@ export const BackupItemActions: React.FC<BackupItemActionsProps> = ({
             onFailure={() => deleteDialogRef.current?.close()}
             pendingLabel="Deleting..."
             refreshOnComplete={true}
+            statusAboveButton
           />
           <Button
             buttonStyle="secondary"

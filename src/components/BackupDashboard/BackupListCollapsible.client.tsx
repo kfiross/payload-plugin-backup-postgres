@@ -267,6 +267,7 @@ export const BackupListCollapsible: React.FC<BackupListCollapsibleProps> = ({
                         {hostname || 'Unknown'}
                       </span>
                       <BackupCollectionsDetails
+                        backupNumber={blob.backupNumber}
                         downloadUrl={blob.downloadUrl}
                         pathname={blob.pathname}
                       />

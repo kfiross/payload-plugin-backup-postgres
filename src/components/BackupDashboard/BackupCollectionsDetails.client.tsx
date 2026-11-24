@@ -9,6 +9,7 @@ import { backupPluginPublicApiPaths } from '../../publicApiPaths'
 import { closeNativeDialogOnBackdropPointer } from '../../utils/dialogBackdrop'
 
 type BackupCollectionsDetailsProps = {
+  backupNumber?: number
   downloadUrl: string
   pathname: string
 }
@@ -18,11 +19,13 @@ type BackupCollectionsResponse = {
 } & Pick<RestorePreviewResponse, 'backupCollections'>
 
 export const BackupCollectionsDetails: React.FC<BackupCollectionsDetailsProps> = ({
+  backupNumber,
   downloadUrl,
   pathname,
 }) => {
   const id = useId()
   const dialogRef = useRef<HTMLDialogElement>(null)
+  const collectionsBodyRef = useRef<HTMLDivElement>(null)
   const [isOpen, setIsOpen] = useState(false)
   const [collections, setCollections] = useState<string[]>([])
   const [phase, setPhase] = useState<'error' | 'idle' | 'loading' | 'ready'>('idle')
@@ -60,6 +63,9 @@ export const BackupCollectionsDetails: React.FC<BackupCollectionsDetailsProps> =
   }, [loadCollections, phase])
 
   const openDetails = () => {
+    if (collectionsBodyRef.current) {
+      collectionsBodyRef.current.scrollTop = 0
+    }
     setIsOpen(true)
     dialogRef.current?.showModal()
     if (phase === 'idle') {
@@ -99,9 +105,12 @@ export const BackupCollectionsDetails: React.FC<BackupCollectionsDetailsProps> =
         ref={dialogRef}
       >
         <h3 className="backup-confirm-dialog__title" id={`${id}-title`}>
-          Collections in backup
+          Collections in backup{backupNumber === undefined ? '' : ` #${backupNumber}`}
         </h3>
-        <div className="backup-confirm-dialog__body backup-item__collections-body">
+        <div
+          className="backup-confirm-dialog__body backup-item__collections-body"
+          ref={collectionsBodyRef}
+        >
           {phase === 'loading' && (
             <p aria-live="polite" className="backup-item__collections-status">
               Loading collection names…
